@@ -19,7 +19,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             chkShowCommitAndPush.Checked = AppSettings.ShowCommitAndPush;
             chkShowResetUnstagedChanges.Checked = AppSettings.ShowResetUnstagedChanges;
             chkShowResetAllChanges.Checked = AppSettings.ShowResetAllChanges;
-
+            chkCurrentUserPreviousCommitMessages.Checked = AppSettings.CommitMessagesFilteredByAuthor;
         }
 
         protected override void PageToSettings()
@@ -30,6 +30,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             AppSettings.ShowCommitAndPush = chkShowCommitAndPush.Checked;
             AppSettings.ShowResetUnstagedChanges = chkShowResetUnstagedChanges.Checked;
             AppSettings.ShowResetAllChanges = chkShowResetAllChanges.Checked;
+            AppSettings.CommitMessagesFilteredByAuthor = chkCurrentUserPreviousCommitMessages.Checked;
         }
     }
 }

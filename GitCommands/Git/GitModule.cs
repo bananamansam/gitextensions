@@ -2797,7 +2797,8 @@ namespace GitCommands
         public IEnumerable<string> GetPreviousCommitMessages(string revision, int count)
         {
             string sep = "d3fb081b9000598e658da93657bf822cc87b2bf6";
-            string output = RunGitCmd("log -n " + count + " " + revision + " --pretty=format:" + sep + "%e%n%s%n%n%b", LosslessEncoding);
+
+            string output = RunGitCmd("log -n " + count + " " + revision + " --pretty=format:" + sep + "%e%n%s%n%n%b" + (AppSettings.CommitMessagesFilteredByAuthor ? " --author=" + GetEffectiveSetting("user.name") : String.Empty), LosslessEncoding);
             string[] messages = output.Split(new string[] { sep }, StringSplitOptions.RemoveEmptyEntries);
 
             if (messages.Length == 0)
