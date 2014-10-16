@@ -138,10 +138,11 @@ namespace GitUI.CommandsDialogs
         }
 
         public FormBrowse(GitUICommands aCommands, string filter)
-            : base(true, aCommands)
+            : base(aCommands)
         {
             InitializeComponent();
-
+            this.KeyPreview = true;
+            
             // set tab page images
             {
                 var imageList = new ImageList();
@@ -215,6 +216,17 @@ namespace GitUI.CommandsDialogs
             _formBrowseMenuCommands = new FormBrowseMenuCommands(this, RevisionGrid);
             _formBrowseMenus = new FormBrowseMenus(menuStrip1);
             RevisionGrid.MenuCommands.MenuChanged += (sender, e) => _formBrowseMenus.OnMenuCommandsPropertyChanged();
+        }
+
+        protected override bool ProcessKey(Keys keyData)
+        {
+            if (keyData == Keys.Escape)
+            {
+                ShowDashboard();
+                return true;
+            }
+
+            return base.ProcessKey(keyData);
         }
 
         private new void Translate()
