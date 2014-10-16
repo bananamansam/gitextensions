@@ -75,7 +75,14 @@ namespace GitCommands
 
         public override int GetHashCode()
         {
-            return (_stash.GetHashCode());
+            if (_stash != null)
+            {
+                return (_stash.GetHashCode());
+            }
+            else
+            {
+                return Name.GetHashCode();
+            }
         }
     }
 }

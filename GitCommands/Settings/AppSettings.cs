@@ -712,6 +712,12 @@ namespace GitCommands
             set { SetInt("commitdialogsplitter", value); }
         }
 
+        public static int StashDialogSplitter
+        {
+            get { return GetInt("stashdialogsplitter", -1); }
+            set { SetInt("stashdialogsplitter", value); }
+        }
+
         public static int CommitDialogRightSplitter
         {
             get { return GetInt("commitdialogrightsplitter", -1); }
