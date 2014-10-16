@@ -153,6 +153,7 @@ namespace GitUI.CommandsDialogs
         public FormCommit(GitUICommands aCommands, CommitKind commitKind, GitRevision editedCommit)
             : base(true, aCommands)
         {
+            KeyPreview = true;
             _taskScheduler = TaskScheduler.FromCurrentSynchronizationContext();
 
             _unstagedLoader = new AsyncLoader(_taskScheduler);

@@ -82,6 +82,7 @@ namespace GitUI
         protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
         {
             if (HotkeysEnabled && Hotkeys != null)
+            {
                 foreach (var hotkey in Hotkeys)
                 {
                     if (hotkey != null && hotkey.KeyData == keyData)
@@ -89,8 +90,26 @@ namespace GitUI
                         return ExecuteCommand(hotkey.CommandCode);
                     }
                 }
+            }
+
+            if (ProcessKey(keyData))
+            {
+                return true;
+            }
 
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        protected virtual bool ProcessKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Escape:
+                    Close();
+                    return true;
+            }
+
+            return false;
         }
 
         protected Keys GetShortcutKeys(int commandCode)
