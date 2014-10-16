@@ -29,9 +29,10 @@ namespace GitUI.CommandsDialogs
             : base(aCommands)
         {
             InitializeComponent();
+            KeyPreview = true;
             Loading.Image = global::GitUI.Properties.Resources.loadingpanel;
             Translate();
-            View.ExtraDiffArgumentsChanged += ViewExtraDiffArgumentsChanged;
+            View.ExtraDiffArgumentsChanged += ViewExtraDiffArgumentsChanged;            
         }
 
         private void ViewExtraDiffArgumentsChanged(object sender, EventArgs e)
@@ -43,20 +44,28 @@ namespace GitUI.CommandsDialogs
         {
             AppSettings.StashKeepIndex = StashKeepIndex.Checked;
             AppSettings.IncludeUntrackedFilesInManualStash = chkIncludeUntrackedFiles.Checked;
+            AppSettings.StashDialogSplitter = splitContainer1.SplitterDistance;
         }
 
         private void FormStashLoad(object sender, EventArgs e)
         {
             StashKeepIndex.Checked = AppSettings.StashKeepIndex;
             chkIncludeUntrackedFiles.Checked = AppSettings.IncludeUntrackedFilesInManualStash;
-
-            splitContainer2_SplitterMoved(null, null);
+            if (AppSettings.StashDialogSplitter != -1)
+            {
+                splitContainer1.SplitterDistance = AppSettings.StashDialogSplitter;
+            }
+            else
+            {
+                splitContainer2_SplitterMoved(null, null);
+            }
         }
 
         GitStash currentWorkingDirStashItem;
 
         private void Initialize()
         {
+            Stashes.ComboBox.DisplayMember = "Message";
             IList<GitStash> stashedItems = Module.GetStashes();
 
             currentWorkingDirStashItem = new GitStash
@@ -196,7 +205,7 @@ namespace GitUI.CommandsDialogs
                                        PSTaskDialog.eSysIcons.Information);
                 if (res == DialogResult.OK)
                 {
-                    UICommands.StashDrop(this, Stashes.Text);
+                    UICommands.StashDrop(this, ((GitStash)Stashes.SelectedItem).Name);
                     Initialize();
                     Cursor.Current = Cursors.Default;
                 }
@@ -208,7 +217,7 @@ namespace GitUI.CommandsDialogs
             }
             else
             {
-                UICommands.StashDrop(this, Stashes.Text);
+                UICommands.StashDrop(this, ((GitStash)Stashes.SelectedItem).Name);
                 Initialize();
                 Cursor.Current = Cursors.Default;
             }
@@ -216,7 +225,7 @@ namespace GitUI.CommandsDialogs
 
         private void ApplyClick(object sender, EventArgs e)
         {
-            UICommands.StashApply(this, Stashes.Text);            
+            UICommands.StashApply(this, ((GitStash)Stashes.SelectedItem).Name);            
             Initialize();
         }
 
@@ -255,13 +264,14 @@ namespace GitUI.CommandsDialogs
 
         private void splitContainer2_SplitterMoved(object sender, SplitterEventArgs e)
         {
-            Stashes.Size = new Size(Math.Min(200, toolStrip1.Width - 25 - toolStripButton1.Width - toolStripLabel1.Width - toolStripButton_customMessage.Width), Stashes.Size.Height);
+            Stashes.Size = new Size(Math.Max(80, toolStrip1.Width - 25 - toolStripButton1.Width - toolStripLabel1.Width - toolStripButton_customMessage.Width), Stashes.Size.Height);
         }
 
         private void FormStash_Resize(object sender, EventArgs e)
         {
             splitContainer2_SplitterMoved(null, null);
         }
+
 
         private void toolStripButton_customMessage_Click(object sender, EventArgs e)
         {

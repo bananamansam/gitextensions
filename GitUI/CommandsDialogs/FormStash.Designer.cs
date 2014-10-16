@@ -88,7 +88,7 @@ namespace GitUI.CommandsDialogs
             // 
             this.splitContainer1.Panel2.Controls.Add(this.View);
             this.splitContainer1.Size = new System.Drawing.Size(885, 650);
-            this.splitContainer1.SplitterDistance = 280;
+            this.splitContainer1.SplitterDistance = 380;
             this.splitContainer1.SplitterWidth = 5;
             this.splitContainer1.TabIndex = 0;
             this.splitContainer1.SplitterMoved += new System.Windows.Forms.SplitterEventHandler(this.splitContainer2_SplitterMoved);
@@ -340,7 +340,7 @@ namespace GitUI.CommandsDialogs
             this.Margin = new System.Windows.Forms.Padding(4);
             this.MinimumSize = new System.Drawing.Size(796, 588);
             this.Name = "FormStash";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Stash";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.FormStashFormClosing);
             this.Load += new System.EventHandler(this.FormStashLoad);
