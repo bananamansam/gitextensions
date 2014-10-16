@@ -1009,6 +1009,12 @@ namespace GitCommands
             set { SetBool("DontCommitMerge", value); }
         }
 
+        public static bool CommitMessagesFilteredByAuthor
+        {
+            get { return GetBool("CommitMessagesFilteredByAuthor", false); }
+            set { SetBool("CommitMessagesFilteredByAuthor", value); }
+        }
+
         public static int CommitValidationMaxCntCharsFirstLine
         {
             get { return GetInt("CommitValidationMaxCntCharsFirstLine", 0); }
@@ -1226,7 +1232,6 @@ namespace GitCommands
         {
             return SettingsContainer.GetString(name, defaultValue);
         }
-
     }
 
     /*
