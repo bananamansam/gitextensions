@@ -81,11 +81,25 @@ namespace GitUI.CommandsDialogs
             Stashes.SelectedItem = null;
             Stashes.Items.Clear();
             foreach (GitStash stashedItem in stashedItems)
+            {
                 Stashes.Items.Add(stashedItem);
-            if (Stashes.Items.Count > 1)// more than just the default ("Current working directory changes")
-                Stashes.SelectedIndex = 1;// -> auto-select first non-default
-            else if (Stashes.Items.Count > 0)// (no stashes) -> select default ("Current working directory changes")
+            }
+
+            if (AppSettings.SelectMostRecentStashOnFormLoad)
+            {
+                if (Stashes.Items.Count > 1)// more than just the default ("Current working directory changes")
+                {
+                    Stashes.SelectedIndex = 1;// -> auto-select first non-default
+                }
+                else if (Stashes.Items.Count > 0)// (no stashes) -> select default ("Current working directory changes")
+                {
+                    Stashes.SelectedIndex = 0;
+                }
+            }
+            else
+            {
                 Stashes.SelectedIndex = 0;
+            }
         }
 
         private void InitializeSoft()

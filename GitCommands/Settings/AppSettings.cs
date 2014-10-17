@@ -210,6 +210,12 @@ namespace GitCommands
             set { SetInt("usermenulocationy", value); }
         }
 
+        public static bool SelectMostRecentStashOnFormLoad
+        {
+            get { return GetBool("selectmostrecentstashonformload", true); }
+            set { SetBool("selectmostrecentstashonformload", value); }
+        }
+
         public static bool StashKeepIndex
         {
             get { return GetBool("stashkeepindex", false); }

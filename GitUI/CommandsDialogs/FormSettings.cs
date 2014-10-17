@@ -66,6 +66,7 @@ namespace GitUI.CommandsDialogs
             settingsTreeView.AddSettingsPage(SettingsPageBase.Create<GitExtensionsSettingsPage>(this), gitExtPageRef);
 
             settingsTreeView.AddSettingsPage(SettingsPageBase.Create<CommitDialogSettingsPage>(this), gitExtPageRef);
+            settingsTreeView.AddSettingsPage(SettingsPageBase.Create<StashDialogSettingsPage>(this), gitExtPageRef);
 
             settingsTreeView.AddSettingsPage(SettingsPageBase.Create<AppearanceSettingsPage>(this), gitExtPageRef);
             settingsTreeView.AddSettingsPage(SettingsPageBase.Create<RevisionLinksSettingsPage>(this), gitExtPageRef);
