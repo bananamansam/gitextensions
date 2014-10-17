@@ -159,6 +159,12 @@
     <Compile Include="CommandsDialogs\SettingsDialog\Pages\BuildServerIntegrationSettingsPage.Designer.cs">
       <DependentUpon>BuildServerIntegrationSettingsPage.cs</DependentUpon>
     </Compile>
+    <Compile Include="CommandsDialogs\SettingsDialog\Pages\StashDialogSettingsPage.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CommandsDialogs\SettingsDialog\Pages\StashDialogSettingsPage.Designer.cs">
+      <DependentUpon>StashDialogSettingsPage.cs</DependentUpon>
+    </Compile>
     <Compile Include="CommandsDialogs\SettingsDialog\Pages\CommitDialogSettingsPage.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -1011,6 +1017,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="CommandsDialogs\SettingsDialog\Pages\BuildServerIntegrationSettingsPage.resx">
       <DependentUpon>BuildServerIntegrationSettingsPage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="CommandsDialogs\SettingsDialog\Pages\StashDialogSettingsPage.resx">
+      <DependentUpon>StashDialogSettingsPage.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="CommandsDialogs\SettingsDialog\Pages\CommitDialogSettingsPage.resx">
       <DependentUpon>CommitDialogSettingsPage.cs</DependentUpon>
