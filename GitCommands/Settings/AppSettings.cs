@@ -258,6 +258,12 @@ namespace GitCommands
             set { SetInt("commitDialogNumberOfPreviousMessages", value); }
         }
 
+        public static PullAction CommitDialogPullAction 
+        {
+            get { return (PullAction)GetInt("CommitDialogPullAction", (int)PullAction.Rebase); }
+            set { SetInt("CommitDialogPullAction", (int)value); }
+        }
+
         public static bool ShowCommitAndPush
         {
             get { return GetBool("showcommitandpush", true); }
@@ -1238,6 +1244,8 @@ namespace GitCommands
         {
             return SettingsContainer.GetString(name, defaultValue);
         }
+
+        public static bool CommitDialogShowPullButton { get; set; }
     }
 
     /*

@@ -200,6 +200,16 @@ namespace GitUI.CommandsDialogs
             HotkeysEnabled = true;
             Hotkeys = HotkeySettingsManager.LoadHotkeys(HotkeySettingsName);
 
+            switch (AppSettings.CommitDialogPullAction)
+            {
+                case AppSettings.PullAction.Merge:
+                    Pull.Image = GitUI.Properties.Resources.PullMerge;
+                    break;
+                case AppSettings.PullAction.Rebase:
+                    Pull.Image = GitUI.Properties.Resources.PullRebase;
+                    break;                
+            }
+
             SelectedDiff.AddContextMenuSeparator();
             _stageSelectedLinesToolStripMenuItem = SelectedDiff.AddContextMenuEntry(_stageSelectedLines.Text, StageSelectedLinesToolStripMenuItemClick);
             _stageSelectedLinesToolStripMenuItem.ShortcutKeyDisplayString = GetShortcutKeys((int)Commands.StageSelectedFile).ToShortcutKeyDisplayString();
@@ -229,6 +239,7 @@ namespace GitUI.CommandsDialogs
             Reset.Visible = AppSettings.ShowResetAllChanges;
             ResetUnStaged.Visible = AppSettings.ShowResetUnstagedChanges;
             CommitAndPush.Visible = AppSettings.ShowCommitAndPush;
+            Pull.Visible = AppSettings.CommitDialogShowPullButton;
             AdjustCommitButtonPanelHeight();
         }
 
@@ -808,11 +819,15 @@ namespace GitUI.CommandsDialogs
             ExecuteCommitCommand();
         }
 
-        private void Merge_Click(object sender, EventArgs e)
+        private void Pull_Click(object sender, EventArgs e)
         {
-            Module.LastPullAction = AppSettings.PullAction.Merge;
+            Module.LastPullAction = AppSettings.CommitDialogPullAction;            
             Module.LastPullActionToFormPullAction();
-            UICommands.StartPullDialog(this, true);
+
+            if (Module.LastPullAction == AppSettings.PullAction.Merge || Module.LastPullAction == AppSettings.PullAction.Rebase)
+            {
+                UICommands.StartPullDialog(this, Module.LastPullAction == AppSettings.PullAction.Merge);
+            }
         }
 
         private void CheckForStagedAndCommit(bool amend, bool push)
