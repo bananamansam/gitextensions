@@ -54,7 +54,7 @@
             this.groupBoxBehaviour.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBoxBehaviour.Location = new System.Drawing.Point(0, 0);
             this.groupBoxBehaviour.Name = "groupBoxBehaviour";
-            this.groupBoxBehaviour.Size = new System.Drawing.Size(1642, 244);
+            this.groupBoxBehaviour.Size = new System.Drawing.Size(1402, 244);
             this.groupBoxBehaviour.TabIndex = 56;
             this.groupBoxBehaviour.TabStop = false;
             this.groupBoxBehaviour.Text = "Behaviour";
@@ -81,7 +81,7 @@
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanelBehaviour.Size = new System.Drawing.Size(1636, 222);
+            this.tableLayoutPanelBehaviour.Size = new System.Drawing.Size(1396, 222);
             this.tableLayoutPanelBehaviour.TabIndex = 57;
             // 
             // _NO_TRANSLATE_CommitDialogNumberOfPreviousMessages
@@ -146,7 +146,7 @@
             this.grpAdditionalButtons.Dock = System.Windows.Forms.DockStyle.Fill;
             this.grpAdditionalButtons.Location = new System.Drawing.Point(3, 122);
             this.grpAdditionalButtons.Name = "grpAdditionalButtons";
-            this.grpAdditionalButtons.Size = new System.Drawing.Size(1630, 97);
+            this.grpAdditionalButtons.Size = new System.Drawing.Size(1390, 97);
             this.grpAdditionalButtons.TabIndex = 5;
             this.grpAdditionalButtons.TabStop = false;
             this.grpAdditionalButtons.Text = "Show additional buttons in commit button area";
@@ -162,7 +162,7 @@
             this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 19);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(1624, 75);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(1384, 75);
             this.flowLayoutPanel1.TabIndex = 0;
             // 
             // chkShowCommitAndPush
@@ -212,7 +212,7 @@
             this.AutoScroll = true;
             this.Controls.Add(this.groupBoxBehaviour);
             this.Name = "CommitDialogSettingsPage";
-            this.Size = new System.Drawing.Size(1642, 901);
+            this.Size = new System.Drawing.Size(1402, 910);
             this.groupBoxBehaviour.ResumeLayout(false);
             this.groupBoxBehaviour.PerformLayout();
             this.tableLayoutPanelBehaviour.ResumeLayout(false);

@@ -808,6 +808,13 @@ namespace GitUI.CommandsDialogs
             ExecuteCommitCommand();
         }
 
+        private void Merge_Click(object sender, EventArgs e)
+        {
+            Module.LastPullAction = AppSettings.PullAction.Merge;
+            Module.LastPullActionToFormPullAction();
+            UICommands.StartPullDialog(this, true);
+        }
+
         private void CheckForStagedAndCommit(bool amend, bool push)
         {
             if (amend)
