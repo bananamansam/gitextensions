@@ -136,6 +136,7 @@ namespace GitUI.CommandsDialogs
             this.panel1 = new System.Windows.Forms.Panel();
             this.Message = new GitUI.SpellChecker.EditNetSpell();
             this.flowCommitButtons = new System.Windows.Forms.FlowLayoutPanel();
+            this.Pull = new System.Windows.Forms.Button();
             this.Commit = new System.Windows.Forms.Button();
             this.CommitAndPush = new System.Windows.Forms.Button();
             this.Reset = new System.Windows.Forms.Button();
@@ -161,7 +162,6 @@ namespace GitUI.CommandsDialogs
             this.commitCursorColumnLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.commitCursorColumn = new System.Windows.Forms.ToolStripStatusLabel();
             this.commitEndPadding = new System.Windows.Forms.ToolStripStatusLabel();
-            this.Merge = new System.Windows.Forms.Button();
             this.UnstagedFileContext.SuspendLayout();
             this.StagedFileContext.SuspendLayout();
             this.UnstagedSubmoduleContext.SuspendLayout();
@@ -1047,7 +1047,7 @@ namespace GitUI.CommandsDialogs
             // flowCommitButtons
             // 
             this.flowCommitButtons.AutoSize = true;
-            this.flowCommitButtons.Controls.Add(this.Merge);
+            this.flowCommitButtons.Controls.Add(this.Pull);
             this.flowCommitButtons.Controls.Add(this.Commit);
             this.flowCommitButtons.Controls.Add(this.CommitAndPush);
             this.flowCommitButtons.Controls.Add(this.Reset);
@@ -1063,6 +1063,20 @@ namespace GitUI.CommandsDialogs
             this.flowCommitButtons.Size = new System.Drawing.Size(175, 218);
             this.flowCommitButtons.TabIndex = 1;
             this.flowCommitButtons.WrapContents = false;
+            // 
+            // Pull
+            // 
+            this.Pull.Image = global::GitUI.Properties.Resources.PullMerge;
+            this.Pull.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.Pull.Location = new System.Drawing.Point(1, 3);
+            this.Pull.Margin = new System.Windows.Forms.Padding(1, 3, 3, 3);
+            this.Pull.Name = "Pull";
+            this.Pull.Size = new System.Drawing.Size(171, 26);
+            this.Pull.TabIndex = 15;
+            this.Pull.TabStop = false;
+            this.Pull.Text = "&Pull";
+            this.Pull.UseVisualStyleBackColor = true;
+            this.Pull.Click += new System.EventHandler(this.Pull_Click);
             // 
             // Commit
             // 
@@ -1312,20 +1326,6 @@ namespace GitUI.CommandsDialogs
             this.commitEndPadding.Name = "commitEndPadding";
             this.commitEndPadding.Size = new System.Drawing.Size(1, 17);
             // 
-            // Merge
-            // 
-            this.Merge.Image = global::GitUI.Properties.Resources.IconMerge;
-            this.Merge.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.Merge.Location = new System.Drawing.Point(1, 3);
-            this.Merge.Margin = new System.Windows.Forms.Padding(1, 3, 3, 3);
-            this.Merge.Name = "Merge";
-            this.Merge.Size = new System.Drawing.Size(171, 26);
-            this.Merge.TabIndex = 15;
-            this.Merge.TabStop = false;
-            this.Merge.Text = "Mer&ge";
-            this.Merge.UseVisualStyleBackColor = true;
-            this.Merge.Click += new System.EventHandler(this.Merge_Click);
-            // 
             // FormCommit
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
@@ -1506,6 +1506,6 @@ namespace GitUI.CommandsDialogs
         private CheckBox StageInSuperproject;
         private Button ResetUnStaged;
         private ToolStripMenuItem resetUnstagedChangesToolStripMenuItem;
-        private Button Merge;
+        private Button Pull;
     }
 }

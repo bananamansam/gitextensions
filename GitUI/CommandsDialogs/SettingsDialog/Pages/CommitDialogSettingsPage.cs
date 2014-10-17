@@ -9,6 +9,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             InitializeComponent();
             Text = "Commit dialog";
             Translate();
+            
         }
 
         protected override void SettingsToPage()
@@ -20,6 +21,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             chkShowResetUnstagedChanges.Checked = AppSettings.ShowResetUnstagedChanges;
             chkShowResetAllChanges.Checked = AppSettings.ShowResetAllChanges;
             chkCurrentUserPreviousCommitMessages.Checked = AppSettings.CommitMessagesFilteredByAuthor;
+            chkPull.Checked = AppSettings.CommitDialogShowPullButton;
+            rbMerge.Checked = AppSettings.CommitDialogPullAction == AppSettings.PullAction.Merge;
+            rbRebase.Checked = AppSettings.CommitDialogPullAction == AppSettings.PullAction.Rebase;
         }
 
         protected override void PageToSettings()
@@ -31,6 +35,13 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             AppSettings.ShowResetUnstagedChanges = chkShowResetUnstagedChanges.Checked;
             AppSettings.ShowResetAllChanges = chkShowResetAllChanges.Checked;
             AppSettings.CommitMessagesFilteredByAuthor = chkCurrentUserPreviousCommitMessages.Checked;
+            AppSettings.CommitDialogShowPullButton = chkPull.Checked;
+            AppSettings.CommitDialogPullAction = rbMerge.Checked ? GitCommands.AppSettings.PullAction.Merge : AppSettings.PullAction.Rebase;
+        }
+
+        private void chkPull_CheckedChanged(object sender, System.EventArgs e)
+        {
+            grpDefaultPullAction.Enabled = chkPull.Checked;
         }
     }
 }
