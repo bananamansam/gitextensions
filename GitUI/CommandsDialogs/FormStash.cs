@@ -278,7 +278,16 @@ namespace GitUI.CommandsDialogs
 
         private void splitContainer2_SplitterMoved(object sender, SplitterEventArgs e)
         {
-            Stashes.Size = new Size(Math.Max(80, toolStrip1.Width - 25 - toolStripButton1.Width - toolStripLabel1.Width - toolStripButton_customMessage.Width), Stashes.Size.Height);
+            int px = 25;
+            foreach (ToolStripItem item in toolStrip1.Items)
+            {
+                if (item != Stashes)
+                {
+                    px += item.Width;
+                }
+            }
+
+            Stashes.Size = new Size(Math.Max(80, toolStrip1.Width - px), Stashes.Size.Height);
         }
 
         private void FormStash_Resize(object sender, EventArgs e)
@@ -327,6 +336,5 @@ namespace GitUI.CommandsDialogs
                 StashMessage.ReadOnly = false;
             }
         }
-    
     }
 }

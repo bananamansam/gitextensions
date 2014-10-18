@@ -718,6 +718,12 @@ namespace GitCommands
             set { SetBool("branchfilterenabled", value); }
         }
 
+        public static bool CommitDialogShowPullButton
+        {
+            get { return GetBool("commitdialogshowpullbutton", false); }
+            set { SetBool("commitdialogshowpullbutton", value); }
+        }
+
         public static int CommitDialogSplitter
         {
             get { return GetInt("commitdialogsplitter", -1); }
@@ -1244,8 +1250,6 @@ namespace GitCommands
         {
             return SettingsContainer.GetString(name, defaultValue);
         }
-
-        public static bool CommitDialogShowPullButton { get; set; }
     }
 
     /*

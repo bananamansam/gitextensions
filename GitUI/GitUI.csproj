@@ -1548,6 +1548,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\IconDelete.bmp" />
+    <None Include="Resources\delete.png" />
+    <None Include="Resources\package_go.png" />
     <Content Include="Translation\Dutch.gif">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
