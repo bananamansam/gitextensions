@@ -251,6 +251,12 @@
     <Compile Include="UserControls\RevisionGridClasses\MenuUtil.cs" />
     <Compile Include="UserControls\RevisionGridClasses\NavigationHistory.cs" />
     <Compile Include="UserControls\RevisionGridClasses\ParentChildNavigationHistory.cs" />
+    <Compile Include="UserControls\StashTreeView.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="UserControls\StashTreeView.Designer.cs">
+      <DependentUpon>StashTreeView.cs</DependentUpon>
+    </Compile>
     <Compile Include="UserManual\UserManual.cs" />
     <Compile Include="UserManual\SingleHtmlUserManual.cs" />
     <Compile Include="UserManual\StandardHtmlUserManual.cs" />
@@ -1154,6 +1160,9 @@
       <DependentUpon>DashboardItem.cs</DependentUpon>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="UserControls\ExListView.resx">
+      <DependentUpon>ExListView.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="UserControls\GotoUserManualControl.resx">
       <DependentUpon>GotoUserManualControl.cs</DependentUpon>
     </EmbeddedResource>
@@ -1442,6 +1451,9 @@
     <EmbeddedResource Include="UserControls\RevisionGrid.resx">
       <DependentUpon>RevisionGrid.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="UserControls\StashTreeView.resx">
+      <DependentUpon>StashTreeView.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="UserControls\ToolStripGitStatus.resx">
       <DependentUpon>ToolStripGitStatus.cs</DependentUpon>

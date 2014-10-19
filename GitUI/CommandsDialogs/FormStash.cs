@@ -32,7 +32,10 @@ namespace GitUI.CommandsDialogs
             KeyPreview = true;
             Loading.Image = global::GitUI.Properties.Resources.loadingpanel;
             Translate();
-            View.ExtraDiffArgumentsChanged += ViewExtraDiffArgumentsChanged;            
+            View.ExtraDiffArgumentsChanged += ViewExtraDiffArgumentsChanged;
+
+            Stashes.UICommandsSource = this;
+            Stashes.AfterSelect += this.Stashes_AfterSelect;
         }
 
         private void ViewExtraDiffArgumentsChanged(object sender, EventArgs e)
@@ -61,44 +64,18 @@ namespace GitUI.CommandsDialogs
             }
         }
 
-        GitStash currentWorkingDirStashItem;
-
         private void Initialize()
         {
-            Stashes.ComboBox.DisplayMember = "Message";
-            IList<GitStash> stashedItems = Module.GetStashes();
-
-            currentWorkingDirStashItem = new GitStash
-            {
-                Name = currentWorkingDirChanges.Text,
-                Message = currentWorkingDirChanges.Text
-            };
-
-            stashedItems.Insert(0, currentWorkingDirStashItem);
-
-            Stashes.Text = "";
             StashMessage.Text = "";
-            Stashes.SelectedItem = null;
-            Stashes.Items.Clear();
-            foreach (GitStash stashedItem in stashedItems)
-            {
-                Stashes.Items.Add(stashedItem);
-            }
+            Stashes.LoadStashTree();
 
             if (AppSettings.SelectMostRecentStashOnFormLoad)
             {
-                if (Stashes.Items.Count > 1)// more than just the default ("Current working directory changes")
-                {
-                    Stashes.SelectedIndex = 1;// -> auto-select first non-default
-                }
-                else if (Stashes.Items.Count > 0)// (no stashes) -> select default ("Current working directory changes")
-                {
-                    Stashes.SelectedIndex = 0;
-                }
+                Stashes.SelectMostRecentStash();
             }
             else
             {
-                Stashes.SelectedIndex = 0;
+                Stashes.SelectWorkingDirectoryNode();
             }
         }
 
@@ -116,7 +93,7 @@ namespace GitUI.CommandsDialogs
             {
                 Stashed.GitItemStatuses = null;
             }
-            else if(gitStash == currentWorkingDirStashItem)
+            else if(gitStash.Branch == null) // working dir
             {
                 toolStripButton_customMessage.Enabled = true;
                 Task.Factory.StartNew(() => Module.GetAllChangedFiles())
@@ -150,7 +127,7 @@ namespace GitUI.CommandsDialogs
             Cursor.Current = Cursors.WaitCursor;
 
             if (stashedItem != null &&
-                gitStash == currentWorkingDirStashItem) //current working directory
+                gitStash.Branch == null) //current working directory
             {
                 View.ViewCurrentChanges(stashedItem);
             }
@@ -243,7 +220,7 @@ namespace GitUI.CommandsDialogs
             Initialize();
         }
 
-        private void StashesSelectedIndexChanged(object sender, EventArgs e)
+        private void Stashes_AfterSelect(object sender, TreeViewEventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
 
@@ -252,7 +229,7 @@ namespace GitUI.CommandsDialogs
             if (Stashes.SelectedItem != null)
                 StashMessage.Text = ((GitStash)Stashes.SelectedItem).Message;
 
-            if (Stashes.Items.Count == 1)
+            if (Stashes.StashCount == 0)
                 StashMessage.Text = noStashes.Text;
 
             Cursor.Current = Cursors.Default;
@@ -278,16 +255,6 @@ namespace GitUI.CommandsDialogs
 
         private void splitContainer2_SplitterMoved(object sender, SplitterEventArgs e)
         {
-            int px = 25;
-            foreach (ToolStripItem item in toolStrip1.Items)
-            {
-                if (item != Stashes)
-                {
-                    px += item.Width;
-                }
-            }
-
-            Stashes.Size = new Size(Math.Max(80, toolStrip1.Width - px), Stashes.Size.Height);
         }
 
         private void FormStash_Resize(object sender, EventArgs e)
