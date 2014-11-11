@@ -108,6 +108,7 @@ namespace GitUI.CommandsDialogs
             this.splitContainer2.Panel2.Controls.Add(this.panel1);
             this.splitContainer2.Size = new System.Drawing.Size(268, 686);
             this.splitContainer2.SplitterDistance = 440;
+            this.splitContainer2.SplitterWidth = 10;
             this.splitContainer2.TabIndex = 1;
             // 
             // Stashes
@@ -144,7 +145,7 @@ namespace GitUI.CommandsDialogs
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(268, 242);
+            this.panel1.Size = new System.Drawing.Size(268, 236);
             this.panel1.TabIndex = 4;
             // 
             // Loading
@@ -154,7 +155,7 @@ namespace GitUI.CommandsDialogs
             this.Loading.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Loading.Location = new System.Drawing.Point(0, 0);
             this.Loading.Name = "Loading";
-            this.Loading.Size = new System.Drawing.Size(268, 242);
+            this.Loading.Size = new System.Drawing.Size(268, 236);
             this.Loading.SizeMode = System.Windows.Forms.PictureBoxSizeMode.CenterImage;
             this.Loading.TabIndex = 12;
             this.Loading.TabStop = false;
@@ -166,7 +167,7 @@ namespace GitUI.CommandsDialogs
             this.Stashed.Location = new System.Drawing.Point(0, 0);
             this.Stashed.Margin = new System.Windows.Forms.Padding(4);
             this.Stashed.Name = "Stashed";
-            this.Stashed.Size = new System.Drawing.Size(268, 242);
+            this.Stashed.Size = new System.Drawing.Size(268, 236);
             this.Stashed.TabIndex = 2;
             this.Stashed.SelectedIndexChanged += new System.EventHandler(this.StashedSelectedIndexChanged);
             // 
@@ -203,7 +204,6 @@ namespace GitUI.CommandsDialogs
             // 
             // Stash
             // 
-            this.Stash.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.Stash.Image = global::GitUI.Properties.Resources.IconSave;
             this.Stash.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.Stash.Name = "Stash";
@@ -214,7 +214,6 @@ namespace GitUI.CommandsDialogs
             // 
             // Apply
             // 
-            this.Apply.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.Apply.Image = global::GitUI.Properties.Resources.stashApply;
             this.Apply.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.Apply.Name = "Apply";
@@ -225,7 +224,6 @@ namespace GitUI.CommandsDialogs
             // 
             // Clear
             // 
-            this.Clear.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.Clear.Image = ((System.Drawing.Image)(resources.GetObject("Clear.Image")));
             this.Clear.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.Clear.Name = "Clear";
@@ -235,7 +233,6 @@ namespace GitUI.CommandsDialogs
             // 
             // toolStripButton1
             // 
-            this.toolStripButton1.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.toolStripButton1.Image = global::GitUI.Properties.Resources.arrow_refresh;
             this.toolStripButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripButton1.Name = "toolStripButton1";
@@ -246,7 +243,6 @@ namespace GitUI.CommandsDialogs
             // 
             // toolStripButton_customMessage
             // 
-            this.toolStripButton_customMessage.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.toolStripButton_customMessage.CheckOnClick = true;
             this.toolStripButton_customMessage.Enabled = false;
             this.toolStripButton_customMessage.Image = global::GitUI.Properties.Resources.Modified;
@@ -261,7 +257,6 @@ namespace GitUI.CommandsDialogs
             // 
             // StashKeepIndex
             // 
-            this.StashKeepIndex.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.StashKeepIndex.CheckOnClick = true;
             this.StashKeepIndex.Image = global::GitUI.Properties.Resources.Icon_33;
             this.StashKeepIndex.ImageTransparentColor = System.Drawing.Color.Magenta;
@@ -271,12 +266,11 @@ namespace GitUI.CommandsDialogs
             // 
             // chkIncludeUntrackedFiles
             // 
-            this.chkIncludeUntrackedFiles.Alignment = System.Windows.Forms.ToolStripItemAlignment.Right;
             this.chkIncludeUntrackedFiles.CheckOnClick = true;
             this.chkIncludeUntrackedFiles.Image = global::GitUI.Properties.Resources.IconAddToGitIgnore;
             this.chkIncludeUntrackedFiles.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.chkIncludeUntrackedFiles.Name = "chkIncludeUntrackedFiles";
-            this.chkIncludeUntrackedFiles.Size = new System.Drawing.Size(149, 20);
+            this.chkIncludeUntrackedFiles.Size = new System.Drawing.Size(149, 24);
             this.chkIncludeUntrackedFiles.Text = "Include Untracked Files";
             // 
             // FormStash
