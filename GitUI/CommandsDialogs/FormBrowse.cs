@@ -2115,6 +2115,24 @@ namespace GitUI.CommandsDialogs
             Clipboard.SetText(fileName.Replace('/', '\\'));
         }
 
+        private void copyRelativePathToClipboard_Click(object sender, EventArgs e)
+        {
+            if (!DiffFiles.SelectedItems.Any())
+                return;
+
+            var fileNames = new StringBuilder();
+            foreach (var item in DiffFiles.SelectedItems)
+            {
+                //Only use append line when multiple items are selected.
+                //This to make it easier to use the text from clipboard when 1 file is selected.
+                if (fileNames.Length > 0)
+                    fileNames.AppendLine();
+
+                fileNames.Append(item.Name);
+            }
+            Clipboard.SetText(fileNames.ToString());
+        }
+
         private void copyFilenameToClipboardToolStripMenuItem1_Click(object sender, EventArgs e)
         {
             if (!DiffFiles.SelectedItems.Any())
