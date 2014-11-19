@@ -108,6 +108,7 @@ namespace GitUI.CommandsDialogs
             this.deleteSelectedFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetSelectedFilesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.resetUnstagedChangesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.copyRelativePathToClipboard = new System.Windows.Forms.ToolStripMenuItem();
             this.resetAlltrackedChangesToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.editGitIgnoreToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -365,7 +366,8 @@ namespace GitUI.CommandsDialogs
             this.toolStripMenuItem14,
             this.toolStripMenuItem10,
             this.toolStripSeparator17,
-            this.toolStripMenuItem11});
+            this.toolStripMenuItem11,
+            this.copyRelativePathToClipboard});
             this.StagedFileContext.Name = "UnstagedFileContext";
             this.StagedFileContext.Size = new System.Drawing.Size(233, 198);
             // 
@@ -756,6 +758,14 @@ namespace GitUI.CommandsDialogs
             this.resetUnstagedChangesToolStripMenuItem.Size = new System.Drawing.Size(214, 22);
             this.resetUnstagedChangesToolStripMenuItem.Text = "Reset unstaged changes";
             this.resetUnstagedChangesToolStripMenuItem.Click += new System.EventHandler(this.resetUnstagedChangesToolStripMenuItem_Click);
+
+            this.copyRelativePathToClipboard.Image = global::GitUI.Properties.Resources.IconCopyToClipboard;
+            this.copyRelativePathToClipboard.Name = "copyRelativePathToClipboard";
+            this.copyRelativePathToClipboard.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
+            this.copyRelativePathToClipboard.Size = new System.Drawing.Size(225, 22);
+            this.copyRelativePathToClipboard.Text = "Copy relative path(s)";
+            this.copyRelativePathToClipboard.Click += copyRelativePathToClipboard_Click;
+
             // 
             // resetAlltrackedChangesToolStripMenuItem
             // 
@@ -1507,5 +1517,6 @@ namespace GitUI.CommandsDialogs
         private Button ResetUnStaged;
         private ToolStripMenuItem resetUnstagedChangesToolStripMenuItem;
         private Button Pull;
+        private ToolStripMenuItem copyRelativePathToClipboard;
     }
 }
