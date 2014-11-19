@@ -2401,6 +2401,26 @@ namespace GitUI.CommandsDialogs
             }
         }
 
+
+
+        void copyRelativePathToClipboard_Click(object sender, System.EventArgs e)
+        {
+            if (!Staged.SelectedItems.Any())
+                return;
+
+            var fileNames = new StringBuilder();
+            foreach (var item in Staged.SelectedItems)
+            {
+                //Only use append line when multiple items are selected.
+                //This to make it easier to use the text from clipboard when 1 file is selected.
+                if (fileNames.Length > 0)
+                    fileNames.AppendLine();
+
+                fileNames.Append(item.Name);
+            }
+            Clipboard.SetText(fileNames.ToString());
+        }
+
         private void toolStripMenuItem10_Click(object sender, EventArgs e)
         {
             OpenContainingFolder(Staged);
