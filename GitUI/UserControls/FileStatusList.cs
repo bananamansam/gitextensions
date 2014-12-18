@@ -263,30 +263,37 @@ namespace GitUI
             }
 
             //TOOLTIP
-            if (listView != null)
+            if (listView != null && e.X >= 0 && e.Y >= 0)
             {
-                var point = new Point(e.X, e.Y);
-                var hover = listView.HitTest(point);
-                if (hover.Item != null)
+                try
                 {
-                    var gitItemStatus = (GitItemStatus)hover.Item.Tag;
-
-                    string text;
-                    if (gitItemStatus.IsRenamed || gitItemStatus.IsCopied)
-                        text = string.Concat(gitItemStatus.Name, " (", gitItemStatus.OldName, ")");
-                    else
-                        text = gitItemStatus.Name;
-
-                    float fTextWidth = listView.CreateGraphics().MeasureString(text, listView.Font).Width + 17;
-
-                    //Use width-itemheight because the icon drawn in front of the text is the itemheight
-                    if (fTextWidth > (FileStatusListView.Width - FileStatusListView.GetItemRect(hover.Item.Index).Height))
+                    var point = new Point(e.X, e.Y);
+                    var hover = listView.HitTest(point);
+                    if (hover.Item != null)
                     {
-                        if (!hover.Item.ToolTipText.Equals(gitItemStatus.ToString()))
-                            hover.Item.ToolTipText = gitItemStatus.ToString();
+                        var gitItemStatus = (GitItemStatus)hover.Item.Tag;
+
+                        string text;
+                        if (gitItemStatus.IsRenamed || gitItemStatus.IsCopied)
+                            text = string.Concat(gitItemStatus.Name, " (", gitItemStatus.OldName, ")");
+                        else
+                            text = gitItemStatus.Name;
+
+                        float fTextWidth = listView.CreateGraphics().MeasureString(text, listView.Font).Width + 17;
+
+                        //Use width-itemheight because the icon drawn in front of the text is the itemheight
+                        if (fTextWidth > (FileStatusListView.Width - FileStatusListView.GetItemRect(hover.Item.Index).Height))
+                        {
+                            if (!hover.Item.ToolTipText.Equals(gitItemStatus.ToString()))
+                                hover.Item.ToolTipText = gitItemStatus.ToString();
+                        }
+                        else
+                            hover.Item.ToolTipText = "";
                     }
-                    else
-                        hover.Item.ToolTipText = "";
+                }
+                catch (ArgumentOutOfRangeException)
+                {
+                    // hittest can throw this.  safe to swallow it and not show a tooltip instead of showing the crash dialog.
                 }
             }
         }
