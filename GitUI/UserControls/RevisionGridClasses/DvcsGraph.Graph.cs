@@ -120,7 +120,7 @@ namespace GitUI.RevisionGridClasses
             {
                 Node startNode;
 
-                if (Nodes.TryGetValue(aGuid, out startNode))
+                if (!String.IsNullOrEmpty(aGuid) && Nodes.TryGetValue(aGuid, out startNode))
                 {
                     return startNode.Ancestors.Any(a => a.IsRelative);
                 }
@@ -132,7 +132,7 @@ namespace GitUI.RevisionGridClasses
             {
                 Node startNode;
 
-                if (Nodes.TryGetValue(aId, out startNode))
+                if (!String.IsNullOrEmpty(aId) && Nodes.TryGetValue(aId, out startNode))
                 {
                     foreach (Junction junction in startNode.Ancestors)
                     {
