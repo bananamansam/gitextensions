@@ -230,6 +230,7 @@ namespace GitUI.CommandsDialogs
             this.Clear.Size = new System.Drawing.Size(91, 24);
             this.Clear.Text = "Delete Stash";
             this.Clear.ToolTipText = "Remove selected stash from the list";
+            this.Clear.Click += this.ClearClick;
             // 
             // toolStripButton1
             // 
