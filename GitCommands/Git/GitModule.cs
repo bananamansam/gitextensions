@@ -57,9 +57,30 @@ namespace GitCommands
         public ConflictedFileData Local;
         public ConflictedFileData Remote;
 
+        /// <summary>
+        /// The full file name, including relative path
+        /// </summary>
         public string Filename
         {
             get { return Local.Filename ?? Base.Filename ?? Remote.Filename; }
+        }
+
+        /// <summary>
+        /// The actual file name
+        /// </summary>
+        public string Name
+        {
+            get
+            {
+                if (!String.IsNullOrEmpty(Filename))
+                {
+                    return Path.GetFileName(Filename);
+                }
+                else
+                {
+                    return String.Empty;
+                }
+            }
         }
     }
 

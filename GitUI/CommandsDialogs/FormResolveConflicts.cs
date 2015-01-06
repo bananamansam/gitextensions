@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Utils;
@@ -126,6 +127,13 @@ namespace GitUI.CommandsDialogs
 
         private readonly bool _offerCommit;
         private bool _thereWhereMergeConflicts;
+        private enum ConflictSort
+        {
+            Name,
+            Path
+        }
+
+        private ConflictSort ConflictSortType { get; set; }
 
         private void FormResolveConflicts_Load(object sender, EventArgs e)
         {
@@ -137,19 +145,8 @@ namespace GitUI.CommandsDialogs
             Cursor.Current = Cursors.WaitCursor;
 
             ConflictedFiles.MultiSelect = false;
-            int oldSelectedRow = 0;
-            if (ConflictedFiles.SelectedRows.Count > 0)
-                oldSelectedRow = ConflictedFiles.SelectedRows[0].Index;
-            ConflictedFiles.DataSource = Module.GetConflicts();
             ConflictedFiles.Columns[0].DataPropertyName = "Filename";
-            if (ConflictedFiles.Rows.Count > oldSelectedRow)
-            {
-                ConflictedFiles.Rows[oldSelectedRow].Selected = true;
-
-                if (oldSelectedRow < ConflictedFiles.FirstDisplayedScrollingRowIndex ||
-                    oldSelectedRow > (ConflictedFiles.FirstDisplayedScrollingRowIndex + ConflictedFiles.DisplayedRowCount(false)))
-                    ConflictedFiles.FirstDisplayedScrollingRowIndex = oldSelectedRow;
-            }
+            BindConflictsGrid();            
 
             InitMergetool();
 
@@ -957,5 +954,48 @@ namespace GitUI.CommandsDialogs
         }
 
         #endregion
+
+        private void ConflictedFiles_CellContentClick(object sender, DataGridViewCellEventArgs e)
+        {
+
+        }
+
+        private void sortByPathToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (sortByPathToolStripMenuItem.Checked)
+            {
+                sortByNameToolStripMenuItem.Checked = false;
+            }
+
+            BindConflictsGrid();
+        }
+
+        private void sortByNameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (sortByNameToolStripMenuItem.Checked)
+            {
+                sortByPathToolStripMenuItem.Checked = false;
+            }
+
+            BindConflictsGrid();
+        }
+
+        private void BindConflictsGrid()
+        {
+            int oldSelectedRow = 0;
+            if (ConflictedFiles.SelectedRows.Count > 0)
+                oldSelectedRow = ConflictedFiles.SelectedRows[0].Index;
+
+            ConflictedFiles.DataSource = null;
+            ConflictedFiles.DataSource = Module.GetConflicts().OrderBy(x => sortByNameToolStripMenuItem.Checked ? x.Name : x.Filename).ToList();
+            if (ConflictedFiles.Rows.Count > oldSelectedRow)
+            {
+                ConflictedFiles.Rows[oldSelectedRow].Selected = true;
+
+                if (oldSelectedRow < ConflictedFiles.FirstDisplayedScrollingRowIndex ||
+                    oldSelectedRow > (ConflictedFiles.FirstDisplayedScrollingRowIndex + ConflictedFiles.DisplayedRowCount(false)))
+                    ConflictedFiles.FirstDisplayedScrollingRowIndex = oldSelectedRow;
+            }
+        }
     }
 }
