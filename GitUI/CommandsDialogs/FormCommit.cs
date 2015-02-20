@@ -821,12 +821,21 @@ namespace GitUI.CommandsDialogs
 
         private void Pull_Click(object sender, EventArgs e)
         {
-            Module.LastPullAction = AppSettings.CommitDialogPullAction;            
-            Module.LastPullActionToFormPullAction();
-
-            if (Module.LastPullAction == AppSettings.PullAction.Merge || Module.LastPullAction == AppSettings.PullAction.Rebase)
+            bool autoStash = AppSettings.AutoStash;
+            try
             {
-                UICommands.StartPullDialog(this, Module.LastPullAction == AppSettings.PullAction.Merge);
+                AppSettings.AutoStash = false;
+                Module.LastPullAction = AppSettings.CommitDialogPullAction;
+                Module.LastPullActionToFormPullAction();
+
+                if (Module.LastPullAction == AppSettings.PullAction.Merge || Module.LastPullAction == AppSettings.PullAction.Rebase)
+                {
+                    UICommands.StartPullDialog(this, Module.LastPullAction == AppSettings.PullAction.Merge);
+                }
+            }
+            finally
+            {
+                AppSettings.AutoStash = autoStash;
             }
         }
 
