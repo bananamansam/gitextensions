@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using GitCommands;
 using ResourceManager;
+using System.Text.RegularExpressions;
 
 namespace GitUI.UserControls
 {
@@ -101,6 +102,26 @@ namespace GitUI.UserControls
         }
 
         public Int32 StashCount { get; private set; }
+
+        public List<GitStash> ChildItems
+        {
+            get
+            {
+                List<GitStash> stashes = new List<GitStash>();
+                foreach (TreeNode node in StashTree.SelectedNode.Nodes)
+                {
+                    GitStash stash = node.Tag as GitStash;
+                    if(stash != null)
+                    {
+                        stashes.Add(stash);
+                    }
+                }
+
+                return stashes
+                    .OrderByDescending(s => s.Index)
+                    .ToList();
+            }
+        }
 
         public GitStash SelectedItem
         {

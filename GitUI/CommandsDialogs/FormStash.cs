@@ -208,9 +208,22 @@ namespace GitUI.CommandsDialogs
             }
             else
             {
-                UICommands.StashDrop(this, ((GitStash)Stashes.SelectedItem).Name);
-                Initialize();
-                Cursor.Current = Cursors.Default;
+                if (Stashes.SelectedItem != null)
+                {
+                    UICommands.StashDrop(this, Stashes.SelectedItem.Name);
+                    Initialize();
+                    Cursor.Current = Cursors.Default;
+                }
+                else if (Stashes.ChildItems.Count > 0)
+                {
+                    foreach (GitStash item in Stashes.ChildItems)
+                    {
+                        UICommands.StashDrop(this, item.Name);
+                    }
+
+                    Initialize();
+                    Cursor.Current = Cursors.Default;
+                }
             }
         }
 
