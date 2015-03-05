@@ -44,7 +44,7 @@ namespace GitUI.CommandsDialogs
             this.View = new GitUI.Editor.FileViewer();
             this.toolStrip1 = new GitUI.ToolStripEx();
             this.Stash = new System.Windows.Forms.ToolStripButton();
-            this.Apply = new System.Windows.Forms.ToolStripButton();
+            this.Apply = new System.Windows.Forms.ToolStripMenuItem();
             this.Clear = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton1 = new System.Windows.Forms.ToolStripButton();
             this.toolStripButton_customMessage = new System.Windows.Forms.ToolStripButton();
@@ -170,6 +170,8 @@ namespace GitUI.CommandsDialogs
             this.Stashed.Size = new System.Drawing.Size(268, 236);
             this.Stashed.TabIndex = 2;
             this.Stashed.SelectedIndexChanged += new System.EventHandler(this.StashedSelectedIndexChanged);
+            this.Stashed.ContextMenu = new ContextMenu();
+            this.Stashed.ContextMenu.MenuItems.Add("Apply Selected Items", Stashed_ApplySelectedItems);
             // 
             // View
             // 
@@ -217,7 +219,7 @@ namespace GitUI.CommandsDialogs
             this.Apply.Image = global::GitUI.Properties.Resources.stashApply;
             this.Apply.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.Apply.Name = "Apply";
-            this.Apply.Size = new System.Drawing.Size(89, 24);
+            this.Apply.Size = new System.Drawing.Size(97, 27);
             this.Apply.Text = "Apply Stash";
             this.Apply.ToolTipText = "Apply selected stash on top of current working directory state";
             this.Apply.Click += new System.EventHandler(this.ApplyClick);
@@ -230,7 +232,6 @@ namespace GitUI.CommandsDialogs
             this.Clear.Size = new System.Drawing.Size(91, 24);
             this.Clear.Text = "Delete Stash";
             this.Clear.ToolTipText = "Remove selected stash from the list";
-            this.Clear.Click += this.ClearClick;
             // 
             // toolStripButton1
             // 
@@ -322,7 +323,7 @@ namespace GitUI.CommandsDialogs
         private ToolTip toolTip;
         private ToolStripButton Stash;
         private ToolStripButton Clear;
-        private ToolStripButton Apply;
+        private ToolStripMenuItem Apply;
         private UserControls.StashTreeView Stashes;
         private ToolStripButton StashKeepIndex;
         private ToolStripButton chkIncludeUntrackedFiles;

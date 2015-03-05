@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -229,7 +230,29 @@ namespace GitUI.CommandsDialogs
 
         private void ApplyClick(object sender, EventArgs e)
         {
-            UICommands.StashApply(this, ((GitStash)Stashes.SelectedItem).Name);            
+            Stashed.ClearSelected();
+            ApplyStash();
+        }
+
+        void Stashed_ApplySelectedItems(object sender, System.EventArgs e)
+        {
+            ApplyStash();
+        }
+
+        private void ApplyStash()
+        {
+            if (Stashed.SelectedItems.Any())
+            {
+                foreach (var item in Stashed.SelectedItems.Where(x => !x.IsDeleted))
+                {
+                    UICommands.StashApply(this, Stashes.SelectedItem.Name, item.Name);
+                }
+            }
+            else
+            {
+                UICommands.StashApply(this, ((GitStash)Stashes.SelectedItem).Name);
+            }
+
             Initialize();
         }
 
@@ -316,5 +339,6 @@ namespace GitUI.CommandsDialogs
                 StashMessage.ReadOnly = false;
             }
         }
+
     }
 }

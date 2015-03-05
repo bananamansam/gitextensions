@@ -13,6 +13,7 @@ using GitUIPluginInterfaces;
 using GitUIPluginInterfaces.RepositoryHosts;
 using Gravatar;
 using Settings = GitCommands.AppSettings;
+using System.Globalization;
 
 namespace GitUI
 {
@@ -367,14 +368,27 @@ namespace GitUI
             return DoActionOnRepo(owner, true, true, null, null, action);
         }
 
-        public bool StashApply(IWin32Window owner, string stashName)
+        public bool StashApply(IWin32Window owner, string stashName, string fileName = null)
         {
-            Func<bool> action = () =>
+            Func<bool> action = null;
+            if (String.IsNullOrWhiteSpace(fileName))
             {
-                FormProcess.ShowDialog(owner, Module, "stash apply " + stashName.Quote());
-                MergeConflictHandler.HandleMergeConflicts(this, owner, false, false);
-                return true;
-            };
+                action = () =>
+                {
+                    FormProcess.ShowDialog(owner, Module, "stash apply " + stashName.Quote());
+                    MergeConflictHandler.HandleMergeConflicts(this, owner, false, false);
+                    return true;
+                };
+            }
+            else
+            {                                
+                action = () =>
+                    {
+                        FormProcess.ShowDialog(owner, Module, String.Format(CultureInfo.InvariantCulture, "checkout {0} -- \"{1}\"", stashName.Quote(), fileName));
+                        MergeConflictHandler.HandleMergeConflicts(this, owner, false, false);
+                        return true;
+                    };
+            }
 
             return DoActionOnRepo(owner, true, true, null, null, action);
         }
