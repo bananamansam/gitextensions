@@ -22,7 +22,26 @@ namespace GitUI.UserControls
             Translate();
             this.MinimumSize = new System.Drawing.Size(20, 20);
             StashTree.AfterSelect += StashTree_AfterSelect;
+            StashTree.MouseClick += StashTree_MouseClick;
             StashTree.HideSelection = false;
+        }
+
+        public Boolean EnableRightClickSelect
+        {
+            get;
+            set;
+        }
+
+        void StashTree_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == System.Windows.Forms.MouseButtons.Right && EnableRightClickSelect)
+            {
+                var info = StashTree.HitTest(e.X, e.Y);
+                if (info.Node != null)
+                {
+                    StashTree.SelectedNode = info.Node;
+                }
+            }
         }
 
         private void StashTree_AfterSelect(object sender, TreeViewEventArgs e)

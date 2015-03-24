@@ -121,6 +121,11 @@ namespace GitUI.CommandsDialogs
             this.Stashes.Name = "Stashes";
             this.Stashes.Size = new System.Drawing.Size(262, 354);
             this.Stashes.TabIndex = 15;
+            this.Stashes.EnableRightClickSelect = true;
+            this.Stashes.ContextMenu = new ContextMenu();
+            this.Stashes.ContextMenu.MenuItems.Add("Apply Stash", ApplyClick);
+            this.Stashes.ContextMenu.MenuItems.Add("-");
+            this.Stashes.ContextMenu.MenuItems.Add("Delete Stash", ClearClick);
             // 
             // StashMessage
             // 
@@ -232,6 +237,7 @@ namespace GitUI.CommandsDialogs
             this.Clear.Size = new System.Drawing.Size(91, 24);
             this.Clear.Text = "Delete Stash";
             this.Clear.ToolTipText = "Remove selected stash from the list";
+            this.Clear.Click += ClearClick;
             // 
             // toolStripButton1
             // 
