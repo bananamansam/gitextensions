@@ -90,6 +90,12 @@ namespace GitUI.CommandsDialogs
             Stashes.Enabled = false;
             toolStripButton1.Enabled = false;
             toolStripButton_customMessage.Enabled = false;
+
+            foreach (MenuItem item in Stashes.ContextMenu.MenuItems)
+            {
+                item.Enabled = false;
+            }
+
             if (gitStash == null)
             {
                 Stashed.GitItemStatuses = null;
@@ -110,6 +116,11 @@ namespace GitUI.CommandsDialogs
                         TaskScheduler.FromCurrentSynchronizationContext());
                 Clear.Enabled = true; // allow Drop
                 Apply.Enabled = true; // allow Apply
+
+                foreach (MenuItem item in Stashes.ContextMenu.MenuItems)
+                {
+                    item.Enabled = true;
+                }
             }
         }
 
