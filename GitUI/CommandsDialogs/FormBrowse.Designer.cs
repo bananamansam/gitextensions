@@ -1969,8 +1969,7 @@ namespace GitUI.CommandsDialogs
             // copyRelativePathToClipboard
             // 
             this.copyRelativePathToClipboard.Image = global::GitUI.Properties.Resources.IconCopyToClipboard;
-            this.copyRelativePathToClipboard.Name = "copyRelativePathToClipboard";
-            this.copyRelativePathToClipboard.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
+            this.copyRelativePathToClipboard.Name = "copyRelativePathToClipboard";            
             this.copyRelativePathToClipboard.Size = new System.Drawing.Size(225, 22);
             this.copyRelativePathToClipboard.Text = "Copy relative path(s)";
             this.copyRelativePathToClipboard.Click += new System.EventHandler(this.copyRelativePathToClipboard_Click);
