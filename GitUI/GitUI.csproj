@@ -247,10 +247,12 @@
     </Compile>
     <Compile Include="UserControls\RevisionGridClasses\CopyToClipboardMenuHelper.cs" />
     <Compile Include="UserControls\RevisionGridClasses\CaptionCustomMenuRenderer.cs" />
+    <Compile Include="UserControls\RevisionGridClasses\FollowParentRewriter.cs" />
     <Compile Include="UserControls\RevisionGridClasses\GitRefListsForRevision.cs" />
     <Compile Include="UserControls\RevisionGridClasses\MenuUtil.cs" />
     <Compile Include="UserControls\RevisionGridClasses\NavigationHistory.cs" />
     <Compile Include="UserControls\RevisionGridClasses\ParentChildNavigationHistory.cs" />
+    <Compile Include="UserControls\AuthorEmailBasedRevisionHighlighting.cs" />
     <Compile Include="UserControls\StashTreeView.cs">
       <SubType>UserControl</SubType>
     </Compile>

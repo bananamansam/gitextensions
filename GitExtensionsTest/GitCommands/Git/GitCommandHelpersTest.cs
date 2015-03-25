@@ -93,7 +93,123 @@ namespace GitExtensionsTest.Git
                 Assert.IsTrue(status[0].Name == "adfs.h");
                 Assert.IsTrue(status[1].Name == "dir.c");
             }
+        }
 
+        [TestMethod]
+        public void GetFullBranchNameTest()
+        {
+            Assert.AreEqual(null, GitCommandHelpers.GetFullBranchName(null));
+            Assert.AreEqual("", GitCommandHelpers.GetFullBranchName(""));
+            Assert.AreEqual("", GitCommandHelpers.GetFullBranchName("    "));
+            Assert.AreEqual("4e0f0fe3f6add43557913c354de02560b8faec32", GitCommandHelpers.GetFullBranchName("4e0f0fe3f6add43557913c354de02560b8faec32"));
+            Assert.AreEqual("refs/heads/master", GitCommandHelpers.GetFullBranchName("master"));
+            Assert.AreEqual("refs/heads/master", GitCommandHelpers.GetFullBranchName(" master "));
+            Assert.AreEqual("refs/heads/master", GitCommandHelpers.GetFullBranchName("refs/heads/master"));
+            Assert.AreEqual("refs/heads/release/2.48", GitCommandHelpers.GetFullBranchName("refs/heads/release/2.48"));
+            Assert.AreEqual("refs/tags/my-tag", GitCommandHelpers.GetFullBranchName("refs/tags/my-tag"));
+        }
+
+        [TestMethod]
+        public void TestGetPlinkCompatibleUrl_Incompatible()
+        {
+            // Test urls that are incompatible and need to be changed      
+            string inUrl, expectUrl, outUrl;
+
+            // ssh urls can cause problems
+            inUrl = "ssh://user@example.com/path/to/project.git";
+            expectUrl = "\"user@example.com:path/to/project.git\"";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual(expectUrl, outUrl);
+
+            inUrl = "ssh://user@example.com:29418/path/to/project.git";
+            expectUrl = "-P 29418 \"user@example.com:path/to/project.git\"";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual(expectUrl, outUrl);
+
+            // ssh, no user
+            inUrl = "ssh://example.com/path/to/project.git";
+            expectUrl = "\"example.com:path/to/project.git\"";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual(expectUrl, outUrl);
+        }
+
+        [TestMethod]
+        public void TestGetPlinkCompatibleUrl_Compatible()
+        {
+            // Test urls that are already compatible, these shouldn't be changed
+            string inUrl, outUrl;
+
+            // ssh in compatible form
+            inUrl = "git@github.com:gitextensions/gitextensions.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // ssh in compatible form, no user
+            inUrl = "example.org:some/path/to/repo.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+        }
+
+        [TestMethod]
+        public void TestGetPlinkCompatibleUrl_NoPlink()
+        {
+            // Test urls that are no valid uris, these should be ignored    
+            string inUrl, outUrl;
+
+            // git protocol does not have authentication
+            inUrl = "git://server/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // git protocol, different port
+            inUrl = "git://server:123/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // we don't need plink for http
+            inUrl = "http://user@server/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // http, different port
+            inUrl = "http://user@server:123/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // http, no user
+            inUrl = "http://server/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // we don't need plink for https
+            inUrl = "https://user@server/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // https, different port
+            inUrl = "https://user@server:123/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            // https, no user
+            inUrl = "https://server/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+        }
+
+        [TestMethod]
+        public void TestGetPlinkCompatibleUrl_Invalid()
+        {
+            // Test urls that are no valid uris, these should be ignored  
+            string inUrl, outUrl;
+
+            inUrl = "foo://server/path/to/project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
+
+            inUrl = @"ssh:\\server\path\to\project.git";
+            outUrl = GitCommandHelpers.GetPlinkCompatibleUrl(inUrl);
+            Assert.AreEqual("\"" + inUrl + "\"", outUrl);
         }
     }
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xliff xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" GitExVersion="2.48RC1">
+<xliff xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.0" GitExVersion="2.49a1">
   <file datatype="plaintext" original="AboutBox" source-language="en">
     <body>
       <trans-unit id="$this.Text">
@@ -42,6 +42,10 @@ This program is distributed in the hope that it will be useful, but WITHOUT ANY 
       </trans-unit>
       <trans-unit id="chkAlwaysShowCheckoutDlg.Text">
         <source>Always show checkout dialog</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="chkCheckForRCVersions.Text">
+        <source>Check for release candidate versions</source>
         <target />
       </trans-unit>
       <trans-unit id="chkDontSHowHelpImages.Text">
@@ -478,6 +482,10 @@ Please make sure git (msysgit or cygwin) is installed or set the correct command
         <source>Green</source>
         <target />
       </trans-unit>
+      <trans-unit id="HighlightAuthoredRevisions.Text">
+        <source>Highlight authored revisions</source>
+        <target />
+      </trans-unit>
       <trans-unit id="LightblueIcon.Text">
         <source>Light blue</source>
         <target />
@@ -516,6 +524,10 @@ Please make sure git (msysgit or cygwin) is installed or set the correct command
       </trans-unit>
       <trans-unit id="groupBox5.Text">
         <source>Application Icon</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="label1.Text">
+        <source>Color authored revisions</source>
         <target />
       </trans-unit>
       <trans-unit id="label25.Text">
@@ -1067,6 +1079,10 @@ Do you want to open it?</source>
         <source>Decrease number of visible lines</source>
         <target />
       </trans-unit>
+      <trans-unit id="cherrypickSelectedLinesToolStripMenuItem.Text">
+        <source>Cherry pick selected lines</source>
+        <target />
+      </trans-unit>
       <trans-unit id="copyNewVersionToolStripMenuItem.Text">
         <source>Copy new version</source>
         <target />
@@ -1454,7 +1470,7 @@ You will have push access. {2}</source>
   <file datatype="plaintext" original="FormAddToGitIgnore" source-language="en">
     <body>
       <trans-unit id="$this.Text">
-        <source>Add files(s) to .gitIgnore</source>
+        <source>Add file(s) to .gitignore</source>
         <target />
       </trans-unit>
       <trans-unit id="AddToIngore.Text">
@@ -1463,6 +1479,10 @@ You will have push access. {2}</source>
       </trans-unit>
       <trans-unit id="_matchingFilesString.Text">
         <source>{0} file(s) matched</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_updateStatusString.Text">
+        <source>Updating ...</source>
         <target />
       </trans-unit>
       <trans-unit id="btnCancel.Text">
@@ -1792,8 +1812,40 @@ compare with first:</source>
         <source>Node not found. File tree selection was not changed.</source>
         <target />
       </trans-unit>
+      <trans-unit id="_pullFetch.Text">
+        <source>Pull - fetch</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_pullFetchAll.Text">
+        <source>Pull - fetch all</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_pullMerge.Text">
+        <source>Pull - merge</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_pullOpenDialog.Text">
+        <source>Open pull dialog</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_pullRebase.Text">
+        <source>Pull - rebase</source>
+        <target />
+      </trans-unit>
       <trans-unit id="_repositoryHostsToolStripMenuItem.Text">
         <source>(Repository hosts)</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_resetFileCaption.Text">
+        <source>Reset</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_resetFileError.Text">
+        <source>Exactly one revision must be selected. Abort.</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_resetFileText.Text">
+        <source>Are you sure you want to reset this file or directory?</source>
         <target />
       </trans-unit>
       <trans-unit id="_saveFileFilterAllFiles.Text">
@@ -1898,6 +1950,10 @@ compare with first:</source>
       </trans-unit>
       <trans-unit id="checkoutToolStripMenuItem.Text">
         <source>Checkout revision...</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="cherryPickSelectedDiffFileToolStripMenuItem.Text">
+        <source>Cherry pick file's changes</source>
         <target />
       </trans-unit>
       <trans-unit id="cherryPickToolStripMenuItem.Text">
@@ -2226,12 +2282,20 @@ Do you want to abort and remove it from the recent repositories list?</source>
         <source>Repository</source>
         <target />
       </trans-unit>
-      <trans-unit id="resetFileToAToolStripMenuItem.Text">
-        <source>A</source>
+      <trans-unit id="resetFileToFirstToolStripMenuItem.Text">
+        <source>First</source>
         <target />
       </trans-unit>
-      <trans-unit id="resetFileToRemoteToolStripMenuItem.Text">
-        <source>B</source>
+      <trans-unit id="resetFileToParentToolStripMenuItem.Text">
+        <source>Parent</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="resetFileToSecondToolStripMenuItem.Text">
+        <source>Second</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="resetFileToSelectedToolStripMenuItem.Text">
+        <source>Selected</source>
         <target />
       </trans-unit>
       <trans-unit id="resetFileToToolStripMenuItem.Text">
@@ -3628,6 +3692,10 @@ If you are not sure just close this window.</source>
         <source>Difftool selected &lt; - &gt; local</source>
         <target />
       </trans-unit>
+      <trans-unit id="followFileHistoryRenamesToolStripMenuItem.Text">
+        <source>Detect and follow - exact renames and copies only</source>
+        <target />
+      </trans-unit>
       <trans-unit id="followFileHistoryToolStripMenuItem.Text">
         <source>Detect and follow renames</source>
         <target />
@@ -4055,9 +4123,9 @@ Check if file is accessible.</source>
         <source>Specify filepatterns you want git to ignore.
 
 Example:
-#ignore thumbnails created by windows
+#Ignore thumbnails created by Windows
 Thumbs.db
-#Ignore files build by Visual Studio
+#Ignore files built by Visual Studio
 *.user
 *.aps
 *.pch
@@ -4414,6 +4482,10 @@ ancestor tree.</source>
         <source>Submodule conflict</source>
         <target />
       </trans-unit>
+      <trans-unit id="_deleted.Text">
+        <source>deleted</source>
+        <target />
+      </trans-unit>
       <trans-unit id="_stageFilename.Text">
         <source>Stage {0}</source>
         <target />
@@ -4597,6 +4669,10 @@ Are you sure you want to rebase this merge?</source>
         <source>You can only fetch all remote branches (*) without merge or rebase.
 If you want to fetch all remote branches, choose fetch.
 If you want to fetch and merge a branch, choose a specific branch.</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_hoverShowImageLabelText.Text">
+        <source>Hover to see scenario when fast forward is possible.</source>
         <target />
       </trans-unit>
       <trans-unit id="_noRemoteBranch.Text">
@@ -4985,6 +5061,10 @@ Nothing to rebase.</source>
       </trans-unit>
       <trans-unit id="_continueRebaseText2.Text">
         <source>&gt;Continue rebase&lt;</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="_hoverShowImageLabelText.Text">
+        <source>Hover to see scenario when fast forward is possible.</source>
         <target />
       </trans-unit>
       <trans-unit id="_noBranchSelectedText.Text">
@@ -6563,7 +6643,7 @@ Context menu for additional operations</source>
         <source>Checkout Windows-style, commit Unix-style line endings ("core.autocrlf"  is set to "true")</source>
         <target />
       </trans-unit>
-      <trans-unit id="groupBox9.Text">
+      <trans-unit id="groupBoxLineEndings.Text">
         <source>Line endings</source>
         <target />
       </trans-unit>
@@ -6648,6 +6728,10 @@ global settings.
       </trans-unit>
       <trans-unit id="chkFollowRenamesInFileHistory.Text">
         <source>Follow renames in file history (experimental)</source>
+        <target />
+      </trans-unit>
+      <trans-unit id="chkFollowRenamesInFileHistoryExact.Text">
+        <source>Follow exact renames and copies only</source>
         <target />
       </trans-unit>
       <trans-unit id="chkPlaySpecialStartupSound.Text">
@@ -7372,7 +7456,7 @@ If this is a central repository (bare repository without a working directory):
         <target />
       </trans-unit>
       <trans-unit id="LocalBranchChx.Text">
-        <source>Local branch</source>
+        <source>Local branch name</source>
         <target />
       </trans-unit>
       <trans-unit id="MessageChx.Text">
@@ -7380,7 +7464,7 @@ If this is a central repository (bare repository without a working directory):
         <target />
       </trans-unit>
       <trans-unit id="RemoteBranchChx.Text">
-        <source>Remote branch</source>
+        <source>Remote branch name</source>
         <target />
       </trans-unit>
       <trans-unit id="Remove.Text">

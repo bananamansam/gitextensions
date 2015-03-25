@@ -16,6 +16,7 @@ using GitUIPluginInterfaces;
 using JetBrains.Annotations;
 using PatchApply;
 using SmartFormat;
+using System.Threading;
 
 namespace GitCommands
 {
@@ -1673,37 +1674,34 @@ namespace GitCommands
             string error = "";
             wereErrors = false;
             var startInfo = CreateGitStartInfo("update-index --add --stdin");
-            var process = new Lazy<Process>(() => Process.Start(startInfo));
+            var processReader = new Lazy<SynchronizedProcessReader>(() => new SynchronizedProcessReader(Process.Start(startInfo)));
+
             foreach (var file in files.Where(file => !file.IsDeleted))
             {
-                UpdateIndex(process, file.Name);
+                UpdateIndex(processReader, file.Name);
             }
-            if (process.IsValueCreated)
+            if (processReader.IsValueCreated)
             {
-                process.Value.StandardInput.Close();
-                string stdOutput, stdError;
-                SynchronizedProcessReader.Read(process.Value, out stdOutput, out stdError);
-                output = stdOutput;
-                error = stdError;
-                process.Value.WaitForExit();
-                wereErrors = process.Value.ExitCode != 0;
+                processReader.Value.Process.StandardInput.Close();
+                processReader.Value.WaitForExit();
+                wereErrors = processReader.Value.Process.ExitCode != 0;
+                output = processReader.Value.OutputString(SystemEncoding);
+                error = processReader.Value.ErrorString(SystemEncoding);
             }
 
             startInfo.Arguments = "update-index --remove --stdin";
-            process = new Lazy<Process>(() => Process.Start(startInfo));
+            processReader = new Lazy<SynchronizedProcessReader>(() => new SynchronizedProcessReader(Process.Start(startInfo)));
             foreach (var file in files.Where(file => file.IsDeleted))
             {
-                UpdateIndex(process, file.Name);
+                UpdateIndex(processReader, file.Name);
             }
-            if (process.IsValueCreated)
+            if (processReader.IsValueCreated)
             {
-                process.Value.StandardInput.Close();
-                string stdOutput, stdError;
-                SynchronizedProcessReader.Read(process.Value, out stdOutput, out stdError);
-                output = output.Combine(Environment.NewLine, stdOutput);
-                error = error.Combine(Environment.NewLine, stdError);
-                process.Value.WaitForExit();
-                wereErrors = wereErrors || process.Value.ExitCode != 0;
+                processReader.Value.Process.StandardInput.Close();
+                processReader.Value.WaitForExit();
+                output = output.Combine(Environment.NewLine, processReader.Value.OutputString(SystemEncoding));
+                error = error.Combine(Environment.NewLine, processReader.Value.ErrorString(SystemEncoding));
+                wereErrors = wereErrors || processReader.Value.Process.ExitCode != 0;
             }
 
             return output.Combine(Environment.NewLine, error);
@@ -1712,44 +1710,44 @@ namespace GitCommands
         public string UnstageFiles(IList<GitItemStatus> files)
         {
             var output = "";
+            string error = "";
             var startInfo = CreateGitStartInfo("update-index --info-only --index-info");
-            var process = new Lazy<Process>(() => Process.Start(startInfo));
+            var processReader = new Lazy<SynchronizedProcessReader>(() => new SynchronizedProcessReader(Process.Start(startInfo)));
             foreach (var file in files.Where(file => !file.IsNew))
             {
-                process.Value.StandardInput.WriteLine("0 0000000000000000000000000000000000000000\t\"" + file.Name.ToPosixPath() + "\"");
+                processReader.Value.Process.StandardInput.WriteLine("0 0000000000000000000000000000000000000000\t\"" + file.Name.ToPosixPath() + "\"");
             }
-            if (process.IsValueCreated)
+            if (processReader.IsValueCreated)
             {
-                process.Value.StandardInput.Close();
-                process.Value.WaitForExit();
-                output = process.Value.StandardOutput.ReadToEnd().Trim();
+                processReader.Value.Process.StandardInput.Close();
+                processReader.Value.WaitForExit();
+                output = processReader.Value.OutputString(SystemEncoding);
+                error = processReader.Value.ErrorString(SystemEncoding);
             }
 
             startInfo.Arguments = "update-index --force-remove --stdin";
-            process = new Lazy<Process>(() => Process.Start(startInfo));
+            processReader = new Lazy<SynchronizedProcessReader>(() => new SynchronizedProcessReader(Process.Start(startInfo)));
             foreach (var file in files.Where(file => file.IsNew))
             {
-                UpdateIndex(process, file.Name);
+                UpdateIndex(processReader, file.Name);
             }
-            if (process.IsValueCreated)
+            if (processReader.IsValueCreated)
             {
-                process.Value.StandardInput.Close();
-                process.Value.WaitForExit();
-
-                if (!string.IsNullOrEmpty(output))
-                    output += Environment.NewLine;
-                output += process.Value.StandardOutput.ReadToEnd().Trim();
+                processReader.Value.Process.StandardInput.Close();
+                processReader.Value.WaitForExit();
+                output = output.Combine(Environment.NewLine, processReader.Value.OutputString(SystemEncoding));
+                error = error.Combine(Environment.NewLine, processReader.Value.ErrorString(SystemEncoding));
             }
 
-            return output;
+            return output.Combine(Environment.NewLine, error);
         }
 
-        private static void UpdateIndex(Lazy<Process> process, string filename)
+        private void UpdateIndex(Lazy<SynchronizedProcessReader> processReader, string filename)
         {
             //process.StandardInput.WriteLine("\"" + ToPosixPath(file.Name) + "\"");
             byte[] bytearr = EncodingHelper.ConvertTo(SystemEncoding,
-                                                      "\"" + filename.ToPosixPath() + "\"" + process.Value.StandardInput.NewLine);
-            process.Value.StandardInput.BaseStream.Write(bytearr, 0, bytearr.Length);
+                                                      "\"" + filename.ToPosixPath() + "\"" + processReader.Value.Process.StandardInput.NewLine);
+            processReader.Value.Process.StandardInput.BaseStream.Write(bytearr, 0, bytearr.Length);            
         }
 
         public bool InTheMiddleOfBisect()
@@ -2033,7 +2031,7 @@ namespace GitCommands
             for (int i = 0; i < list.Length; i++)
             {
                 string stashString = list[i];
-                if (stashString.IndexOf(':') > 0)
+                if (stashString.IndexOf(':') > 0 && ! stashString.StartsWith("fatal: "))
                 {
                     stashes.Add(new GitStash(stashString, i));
                 }
@@ -2540,7 +2538,7 @@ namespace GitCommands
 
             foreach (var itemsString in itemsStrings)
             {
-                if (itemsString == null || itemsString.Length <= 42)
+                if (itemsString == null || itemsString.Length <= 42 || itemsString.StartsWith("error: "))
                     continue;
 
                 var completeName = itemsString.Substring(41).Trim();

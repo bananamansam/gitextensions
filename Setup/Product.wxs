@@ -347,6 +347,9 @@
             <Component Id="ruRU.dic" Guid="*">
                 <File Source="..\Bin\Dictionaries\ru-RU.dic" />
             </Component>
+            <Component Id="plPL.dic" Guid="*">
+                <File Source="..\Bin\Dictionaries\pl-PL.dic" />
+            </Component>
         </DirectoryRef>
         <DirectoryRef Id="TranslationsDir">
             <Component Id="English.gif" Guid="*">
@@ -706,6 +709,9 @@
                 <Feature Id="ruRU" Title="ru-RU" Level="1">
                     <ComponentRef Id="ruRU.dic" />
                 </Feature>
+                <Feature Id="plPL" Title="pl-PL" Level="1">
+                    <ComponentRef Id="plPL.dic" />
+                </Feature>
             </Feature>
             <Feature Id="Translation" Title="Translations" Level="1">
                 <Feature Id="Dutch" Title="Dutch" Level="1">
@@ -776,7 +782,7 @@
         <?if $(var.IncludeRequiredSoftware) = 1 ?>
         <Binary Id="KDiff" SourceFile="..\Bin\KDiff3-64bit-Setup_0.9.98-2.exe" />
         <CustomAction Id="InstallKDiff" Impersonate="no" BinaryKey="KDiff" Execute="deferred" ExeCommand="" Return="ignore" />
-        <Binary Id="MsysGit" SourceFile="..\Bin\Git-1.9.4-preview20140929.exe" />
+        <Binary Id="MsysGit" SourceFile="..\Bin\Git-1.9.5-preview20141217.exe" />
         <CustomAction Id="InstallMsysGit" Impersonate="no" BinaryKey="MsysGit" Execute="deferred" ExeCommand="/COMPONENTS=&quot;assoc,assoc_sh&quot;" Return="ignore" />
         <CustomAction Id="InstallGitCredentialWinStore" FileKey="GitExtensions.exe" ExeCommand="installcredhelper" Return="asyncWait" />
         <InstallExecuteSequence>

@@ -39,8 +39,8 @@ namespace GitUI.SpellChecker
         private static WordDictionary _wordDictionary;
 
         private readonly CancellationTokenSource _autoCompleteCancellationTokenSource = new CancellationTokenSource();
-        private readonly List<IAutoCompleteProvider> _autoCompleteProviders = new List<IAutoCompleteProvider>(); 
-        private Task<IEnumerable<AutoCompleteWord>> _autoCompleteListTask; 
+        private readonly List<IAutoCompleteProvider> _autoCompleteProviders = new List<IAutoCompleteProvider>();
+        private Task<IEnumerable<AutoCompleteWord>> _autoCompleteListTask;
         private bool _autoCompleteWasUserActivated;
         private bool _disableAutoCompleteTriggerOnTextUpdate;
         private readonly Dictionary<Keys, string> _keysToSendToAutoComplete = new Dictionary<Keys, string>
@@ -77,7 +77,7 @@ namespace GitUI.SpellChecker
             {
                 if (TextBox == null)
                     return string.Empty;
-                
+
                 return IsWatermarkShowing ? string.Empty : TextBox.Text;
             }
             set
@@ -220,7 +220,7 @@ namespace GitUI.SpellChecker
         {
             get
             {
-                return IsUICommandsInitialized ? 
+                return IsUICommandsInitialized ?
                     Module.EffectiveSettings:
                     AppSettings.SettingsContainer;
             }
@@ -252,16 +252,16 @@ namespace GitUI.SpellChecker
                 TaskContinuationOptions.NotOnCanceled,
                 TaskScheduler.FromCurrentSynchronizationContext()
             );
-            // 
+            //
             // spelling
-            //             
+            //
             _spelling.ReplacedWord += SpellingReplacedWord;
             _spelling.DeletedWord += SpellingDeletedWord;
             _spelling.MisspelledWord += SpellingMisspelledWord;
 
-            // 
+            //
             // wordDictionary
-            // 
+            //
             LoadDictionary();
         }
 
@@ -590,14 +590,14 @@ namespace GitUI.SpellChecker
             if (!IsWatermarkShowing)
             {
                 OnTextChanged(e);
+
+                if (Settings.Dictionary == "None" || TextBox.Text.Length < 4)
+                    return;
+
+                SpellCheckTimer.Enabled = false;
+                SpellCheckTimer.Interval = 250;
+                SpellCheckTimer.Enabled = true;
             }
-
-            if (Settings.Dictionary == "None" || TextBox.Text.Length < 4)
-                return;
-
-            SpellCheckTimer.Enabled = false;
-            SpellCheckTimer.Interval = 250;
-            SpellCheckTimer.Enabled = true;
         }
 
         private void TextBoxSizeChanged(object sender, EventArgs e)
@@ -631,7 +631,7 @@ namespace GitUI.SpellChecker
             skipSelectionUndo = false;
         }
 
-        
+
 
         private void TextBox_KeyDown(object sender, KeyEventArgs e)
         {
@@ -702,9 +702,9 @@ namespace GitUI.SpellChecker
         {
             if (!ContainsFocus && string.IsNullOrEmpty(TextBox.Text) && TextBoxFont != null)
             {
+                IsWatermarkShowing = true;
                 TextBox.Font = new Font(SystemFonts.MessageBoxFont, FontStyle.Italic);
                 TextBox.ForeColor = SystemColors.InactiveCaption;
-                IsWatermarkShowing = true;
                 TextBox.Text = WatermarkText;
             }
         }
@@ -916,7 +916,7 @@ namespace GitUI.SpellChecker
 
                 return;
             }
-            
+
             AutoCompleteToolTipTimer.Stop();
             AutoCompleteToolTip.Hide(TextBox);
 
@@ -953,15 +953,27 @@ namespace GitUI.SpellChecker
 
             var cursorPos = GetCursorPosition();
 
+            var top = cursorPos.Y;
             var height = (sizes.Count + 1) * AutoComplete.ItemHeight;
             var width = sizes.Max(x => x.Width);
-            if (cursorPos.Y + height > TextBox.Height)
+            if (top + height > TextBox.Height)
             {
-                height = TextBox.Height - cursorPos.Y;
+                // if reduced height is not too small then shrink only
+                if (TextBox.Height - top > TextBox.Height / 2)
+                {
+                    height = TextBox.Height - top;
+                }
+                else
+                {
+                    // if shrinking wasn't acceptable, move higher
+                    top = Math.Max(0, TextBox.Height - height);
+                    // and reduce height if moving up wasn't enough
+                    height = Math.Min(TextBox.Height - top, height);
+                }
                 width += SystemInformation.VerticalScrollBarWidth;
             }
 
-            AutoComplete.SetBounds(cursorPos.X, cursorPos.Y, width, height);
+            AutoComplete.SetBounds(cursorPos.X, top, width, height);
 
             AutoComplete.DataSource = list.ToList();
             AutoComplete.Show();
@@ -983,8 +995,11 @@ namespace GitUI.SpellChecker
 
         private void AutoCompleteTimer_Tick (object sender, EventArgs e)
         {
-            UpdateOrShowAutoComplete(false);
-            AutoCompleteTimer.Stop();
+            if (!_customUnderlines.IsImeStartingComposition)
+            {
+                UpdateOrShowAutoComplete(false);
+                AutoCompleteTimer.Stop();
+            }
         }
 
         public void CancelAutoComplete ()

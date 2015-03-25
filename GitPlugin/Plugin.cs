@@ -25,6 +25,10 @@ namespace GitPlugin.Commands
         private readonly OutputWindowPane _outputPane;
         private readonly Dictionary<string, Command> _visualStudioCommands = new Dictionary<string, Command>();
 
+        // specify if captions of commands can be updated
+        // On VS2013 (at least) update captions of command on hidden toolbar lead to create doubles of all commands on toolbar 2 commits, 4, 8, 16 ...
+        public static bool AllowCaptionUpdate;
+
         public Plugin(DTE2 application, AddIn addIn, string panelName, string connectPath)
         {
             // TODO: This can be figured out from traversing the assembly and locating the Connect class...
@@ -148,23 +152,30 @@ namespace GitPlugin.Commands
                 .Any(control => (control.Caption.Replace("&", "").Trim().Equals(caption.Replace("&", ""), StringComparison.CurrentCultureIgnoreCase) || (control.Caption.StartsWith("Commit") && caption.StartsWith("Commit"))));
         }
 
-        public static void ChangeCommandCaption(DTE2 application, string commandBarName, string tooltipText, string caption)
+        public static bool ChangeCommandCaption(DTE2 application, string commandBarName, string tooltipText, string caption)
         {
+            if (!AllowCaptionUpdate)
+                return false;
+
             try
             {
                 var cmdBars = (CommandBars)application.CommandBars;
                 CommandBar commandBar = cmdBars[commandBarName];
-                foreach (CommandBarControl control in commandBar.Controls)
+                var cbcc = commandBar.Controls.Cast<CommandBarButton>().ToArray();
+                foreach (var control in cbcc)
                 {
                     if (control.TooltipText.Trim().Equals(tooltipText.Trim(), StringComparison.CurrentCultureIgnoreCase))
                     {
                         control.Caption = caption;
+                        control.Style = MsoButtonStyle.msoButtonIconAndCaption;
                     }
                 }
+                return true;
             }
             catch (Exception)
             {
                 //ignore!
+                return false;
             }
         }
 
@@ -412,7 +423,9 @@ namespace GitPlugin.Commands
             {
                 foreach (CommandBarButton control in cb.Controls)
                 {
-                    if (control.Caption != "Commit")
+                    if (control.Caption.StartsWith("Commit"))
+                        control.Style = MsoButtonStyle.msoButtonIconAndCaption;
+                    else
                         control.Style = MsoButtonStyle.msoButtonIcon;
                 }
             }
@@ -437,8 +450,7 @@ namespace GitPlugin.Commands
                         ref contextGUIDS,
                         (int) vsCommandStatus.vsCommandStatusSupported |
                         (int) vsCommandStatus.vsCommandStatusEnabled,
-                        (int) commandStyle,
-                        vsCommandControlType.vsCommandControlTypeButton);
+                        (int) commandStyle);
                 }
                 catch (Exception)
                 {
@@ -449,10 +461,9 @@ namespace GitPlugin.Commands
             {
                 command = commands.AddNamedCommand2(_addIn,
                     commandName, caption, tooltip, true, -1, ref contextGUIDS,
-                    (int) vsCommandStatus.vsCommandStatusSupported +
+                    (int) vsCommandStatus.vsCommandStatusSupported |
                     (int) vsCommandStatus.vsCommandStatusEnabled,
-                    (int) commandStyle,
-                    vsCommandControlType.vsCommandControlTypeButton);
+                    (int) commandStyle);
             }
 
             if (command != null)

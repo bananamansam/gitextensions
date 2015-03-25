@@ -12,6 +12,7 @@ using GitUI.CommandsDialogs;
 using GitUI.Hotkey;
 using ICSharpCode.TextEditor.Util;
 using PatchApply;
+using GitCommands.Settings;
 
 namespace GitUI.Editor
 {
@@ -706,7 +707,7 @@ namespace GitUI.Editor
                 }
             }
 
-            Clipboard.SetText(code);
+            Clipboard.SetText(DoAutoCRLF(code));
         }
 
         private void CopyPatchToolStripMenuItemClick(object sender, EventArgs e)
@@ -963,19 +964,23 @@ namespace GitUI.Editor
         private void CopyNotStartingWith(char startChar)
         {
             string code = _internalFileViewer.GetSelectedText();
+            bool noSelection = false;
             if (string.IsNullOrEmpty(code))
-                return;
+            {
+                code = _internalFileViewer.GetText();
+                noSelection = true;
+            }
 
             if (_currentViewIsPatch)
             {
                 //add artificail space if selected text is not starting from line begining, it will be removed later
-                int pos = _internalFileViewer.GetSelectionPosition();
+                int pos = noSelection ? 0 : _internalFileViewer.GetSelectionPosition();
                 string fileText = _internalFileViewer.GetText();
                 if (pos > 0)
                     if (fileText[pos - 1] != '\n')
                         code = " " + code;
                 IEnumerable<string> lines = code.Split('\n');
-                lines = lines.Where(s => s.Length == 0 || s[0] != startChar);
+                lines = lines.Where(s => s.Length == 0 || s[0] != startChar || (s.Length > 2 && s[1] == s[0] && s[2] == s[0]));
                 int hpos = fileText.IndexOf("\n@@");
                 //if header is selected then don't remove diff extra chars
                 if (hpos <= pos)
@@ -987,9 +992,18 @@ namespace GitUI.Editor
                 code = string.Join("\n", lines);
             }
 
-            Clipboard.SetText(code);
+            Clipboard.SetText(DoAutoCRLF(code));
         }
 
+        private string DoAutoCRLF(string s)
+        {
+            if (Module.EffectiveConfigFile.core.autocrlf.Value == AutoCRLFType.True)
+            {
+                return s.Replace("\n", Environment.NewLine);
+            }
+
+            return s;
+        }
 
         private void copyNewVersionToolStripMenuItem_Click(object sender, EventArgs e)
         {

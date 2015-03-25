@@ -155,8 +155,8 @@ namespace GitCommands
 
             startProcess.Exited += (sender, args) =>
             {
-              var executionEndTimestamp = DateTime.Now;
-              AppSettings.GitLog.Log (quotedCmd + " " + arguments, executionStartTimestamp, executionEndTimestamp);
+                var executionEndTimestamp = DateTime.Now;
+                AppSettings.GitLog.Log(quotedCmd + " " + arguments, executionStartTimestamp, executionEndTimestamp);
             };
 
             return startProcess;
@@ -179,6 +179,31 @@ namespace GitCommands
                    (arguments.Contains("remote")) ||
                    (arguments.Contains("fetch")) ||
                    (arguments.Contains("pull"));
+        }
+
+        /// <summary>
+        /// Transforms the given input Url to make it compatible with Plink, if necessary
+        /// </summary>
+        public static string GetPlinkCompatibleUrl(string inputUrl)
+        {
+            // We don't need putty for http:// links and git@... urls are already usable.
+            // But ssh:// urls can cause problems
+            if (!inputUrl.StartsWith("ssh") || !Uri.IsWellFormedUriString(inputUrl, UriKind.Absolute))
+                return "\"" + inputUrl + "\"";
+
+            // Turn ssh://user@host/path into user@host:path, which works better
+            Uri uri = new Uri(inputUrl, UriKind.Absolute);
+            string fixedUrl = "";
+            if (!uri.IsDefaultPort)
+                fixedUrl += "-P " + uri.Port + " ";
+            fixedUrl += "\"";
+
+            if (!String.IsNullOrEmpty(uri.UserInfo))
+                fixedUrl += uri.UserInfo + "@";
+            fixedUrl += uri.Host;
+            fixedUrl += ":" + uri.LocalPath.Substring(1) + "\"";
+
+            return fixedUrl;
         }
 
         private static IEnumerable<string> StartProcessAndReadLines(string arguments, string cmd, string workDir, string stdInput)
@@ -349,6 +374,9 @@ namespace GitCommands
 
         public static string GetFullBranchName(string branch)
         {
+            if (branch == null)
+                return null;
+
             branch = branch.Trim();
 
             if (string.IsNullOrEmpty(branch) || branch.StartsWith("refs/"))
@@ -886,7 +914,7 @@ namespace GitCommands
         /*
                source: C:\Program Files\msysgit\doc\git\html\git-status.html
         */
-        public static List<GitItemStatus> GetAllChangedFilesFromString(GitModule module, string statusString, bool fromDiff  = false)
+        public static List<GitItemStatus> GetAllChangedFilesFromString(GitModule module, string statusString, bool fromDiff = false)
         {
             var diffFiles = new List<GitItemStatus>();
 
@@ -1295,6 +1323,28 @@ namespace GitCommands
             {
                 return false;
             }
+        }
+
+        // returns " --find-renames=..." according to app settings 
+        public static string FindRenamesOpt()
+        {
+            string result = " --find-renames";
+            if (AppSettings.FollowRenamesInFileHistoryExactOnly)
+            {
+                result += "=\"100%\"";
+            }
+            return result;
+        }
+
+        // returns " --find-renames=... --find-copies=..." according to app settings 
+        public static string FindRenamesAndCopiesOpts()
+        {
+            string findCopies = " --find-copies";
+            if (AppSettings.FollowRenamesInFileHistoryExactOnly)
+            {
+                findCopies += "=\"100%\"";
+            }
+            return FindRenamesOpt() + findCopies;
         }
 
 #if !__MonoCS__
