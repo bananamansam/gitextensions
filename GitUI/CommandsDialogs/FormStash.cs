@@ -41,6 +41,14 @@ namespace GitUI.CommandsDialogs
             Stashes.AfterSelect += this.Stashes_AfterSelect;
         }
 
+        protected override bool ProcessKey(Keys keyData)
+        {
+            if (keyData == Keys.Delete)
+                OnDropStash();
+
+            return base.ProcessKey(keyData);
+        }
+
         private void ViewExtraDiffArgumentsChanged(object sender, EventArgs e)
         {
             StashedSelectedIndexChanged(null, null);
@@ -190,7 +198,18 @@ namespace GitUI.CommandsDialogs
         private void ClearClick(object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
-            var stashName = GetStashName();
+            try
+            {
+                OnDropStash();
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
+        }
+
+        private void OnDropStash()
+        {
             if (AppSettings.StashConfirmDropShow)
             {
                 DialogResult res = PSTaskDialog.cTaskDialog.MessageBox(
@@ -205,35 +224,32 @@ namespace GitUI.CommandsDialogs
                                        PSTaskDialog.eSysIcons.Information,
                                        PSTaskDialog.eSysIcons.Information);
                 if (res == DialogResult.OK)
-                {
-                    UICommands.StashDrop(this, ((GitStash)Stashes.SelectedItem).Name);
-                    Initialize();
-                    Cursor.Current = Cursors.Default;
-                }
+                    DropStash();
 
                 if (PSTaskDialog.cTaskDialog.VerificationChecked)
-                {
                     AppSettings.StashConfirmDropShow = false;
-                }
             }
             else
             {
-                if (Stashes.SelectedItem != null)
-                {
-                    UICommands.StashDrop(this, Stashes.SelectedItem.Name);
-                    Initialize();
-                    Cursor.Current = Cursors.Default;
-                }
-                else if (Stashes.ChildItems.Count > 0)
-                {
-                    foreach (GitStash item in Stashes.ChildItems)
-                    {
-                        UICommands.StashDrop(this, item.Name);
-                    }
+                DropStash();
+            }
+        }
 
-                    Initialize();
-                    Cursor.Current = Cursors.Default;
+        private void DropStash()
+        {
+            if (Stashes.SelectedItem != null)
+            {
+                UICommands.StashDrop(this, Stashes.SelectedItem.Name);
+                Initialize();
+            }
+            else if (Stashes.ChildItems.Count > 0)
+            {
+                foreach (GitStash item in Stashes.ChildItems)
+                {
+                    UICommands.StashDrop(this, item.Name);
                 }
+
+                Initialize();
             }
         }
 
@@ -248,7 +264,7 @@ namespace GitUI.CommandsDialogs
             ApplyStash();
         }
 
-        void Stashed_ApplySelectedItems(object sender, System.EventArgs e)
+        private void Stashed_ApplySelectedItems(object sender, System.EventArgs e)
         {
             ApplyStash();
         }
@@ -311,7 +327,6 @@ namespace GitUI.CommandsDialogs
         {
             splitContainer2_SplitterMoved(null, null);
         }
-
 
         private void toolStripButton_customMessage_Click(object sender, EventArgs e)
         {
