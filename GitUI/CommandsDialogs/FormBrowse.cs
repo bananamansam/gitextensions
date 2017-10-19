@@ -282,6 +282,17 @@ namespace GitUI.CommandsDialogs
             }
         }
 
+        protected override bool ProcessKey(Keys keyData)
+        {
+            if (keyData == Keys.Escape)
+            {
+                ShowDashboard();
+                return true;
+            }
+
+            return base.ProcessKey(keyData);
+        }
+
         private void ManageWorktreeSupport()
         {
             if (!GitCommandHelpers.VersionInUse.SupportWorktree)

@@ -40,7 +40,24 @@ namespace ResourceManager
                     }
                 }
 
+            if (ProcessKey(keyData))
+                return true;
+
             return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+
+
+        protected virtual bool ProcessKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Escape:
+                    Close();
+                    return true;
+            }
+
+            return false;
         }
 
         protected Keys GetShortcutKeys(int commandCode)
