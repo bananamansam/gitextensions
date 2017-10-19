@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
 using Gravatar;
@@ -12,12 +11,16 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
     public partial class AppearanceSettingsPage : SettingsPageWithHeader
     {
+        private readonly TranslationString _noDictFile =
+            new TranslationString("None");
         private readonly TranslationString _noDictFilesFound =
             new TranslationString("No dictionary files found in: {0}");
 
         private Font _diffFont;
         private Font _applicationFont;
         private Font commitFont;
+        private readonly IImageCache _avatarCache;
+
 
         public AppearanceSettingsPage()
         {
@@ -25,7 +28,9 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             Text = "Appearance";
             Translate();
 
-            NoImageService.Items.AddRange(GravatarService.DynamicServices.Cast<object>().ToArray());
+            _avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+
+            NoImageService.Items.AddRange(Enum.GetNames(typeof(DefaultImageType)));
         }
 
         protected override string GetCommaSeparatedKeywordList()
@@ -33,15 +38,35 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             return "graph,visual studio,author,image,font,lang,language,spell,spelling";
         }
 
-        // TODO: needed?
-        ////protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
-        ////{
-        ////    if (!e.Cancel)
-        ////    {
-        ////        diffFontDialog.Dispose();
-        ////        applicationDialog.Dispose();
-        ////    }
-        ////}
+        private int GetTruncatePathMethodIndex(string text)
+        {
+            switch (text.ToLowerInvariant())
+            {
+                case "compact":
+                    return 1;
+                case "trimstart":
+                    return 2;
+                case "filenameonly":
+                    return 3;
+                default:
+                    return 0;
+            }
+        }
+
+        private string GetTruncatePathMethodString(int index)
+        {
+            switch (index)
+            {
+                case 1:
+                    return "compact";
+                case 2:
+                    return "trimstart";
+                case 3:
+                    return "fileNameOnly";
+                default:
+                    return "none";
+            }
+        }
 
         protected override void SettingsToPage()
         {
@@ -49,61 +74,35 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
             chkShowCurrentBranchInVisualStudio.Checked = AppSettings.ShowCurrentBranchInVisualStudio;
             _NO_TRANSLATE_DaysToCacheImages.Value = AppSettings.AuthorImageCacheDays;
-            if (AppSettings.AuthorImageSize <= 120)
-                AuthorImageSize.SelectedIndex = 0;
-            else if (AppSettings.AuthorImageSize <= 200)
-                AuthorImageSize.SelectedIndex = 1;
-            else if (AppSettings.AuthorImageSize <= 280)
-                AuthorImageSize.SelectedIndex = 2;
-            else
-                AuthorImageSize.SelectedIndex = 3;
             ShowAuthorGravatar.Checked = AppSettings.ShowAuthorGravatar;
-            NoImageService.Text = AppSettings.GravatarFallbackService;
+            NoImageService.Text = AppSettings.GravatarDefaultImageType;
 
             Language.Items.Clear();
             Language.Items.Add("English");
             Language.Items.AddRange(Translator.GetAllTranslations());
             Language.Text = AppSettings.Translation;
 
-            _NO_TRANSLATE_truncatePathMethod.Text = AppSettings.TruncatePathMethod;
+            truncatePathMethod.SelectedIndex = GetTruncatePathMethodIndex(AppSettings.TruncatePathMethod);
 
-            Dictionary.Text = AppSettings.Dictionary;
+            Dictionary.Items.Clear();
+            Dictionary.Items.Add(_noDictFile.Text);
+            if (AppSettings.Dictionary.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                Dictionary.SelectedIndex = 0;
+            else
+                Dictionary.Text = AppSettings.Dictionary;
 
             chkShowRelativeDate.Checked = AppSettings.RelativeDate;
 
             SetCurrentApplicationFont(AppSettings.Font);
             SetCurrentDiffFont(AppSettings.DiffFont);
             SetCurrentCommitFont(AppSettings.CommitFont);
-
         }
 
         protected override void PageToSettings()
         {
             AppSettings.EnableAutoScale = chkEnableAutoScale.Checked;
-            AppSettings.TruncatePathMethod = _NO_TRANSLATE_truncatePathMethod.Text;
+            AppSettings.TruncatePathMethod = GetTruncatePathMethodString(truncatePathMethod.SelectedIndex);
             AppSettings.ShowCurrentBranchInVisualStudio = chkShowCurrentBranchInVisualStudio.Checked;
-
-            int authorImageSize;
-            switch (AuthorImageSize.SelectedIndex)
-            {
-                case 1:
-                    authorImageSize = 160;
-                    break;
-                case 2:
-                    authorImageSize = 240;
-                    break;
-                case 3:
-                    authorImageSize = 320;
-                    break;
-                default:
-                    authorImageSize = 80;
-                    break;
-            }
-            if (authorImageSize != AppSettings.AuthorImageSize)
-            {
-                AppSettings.AuthorImageSize = authorImageSize;
-                GravatarService.ClearImageCache();
-            }
 
             AppSettings.Translation = Language.Text;
             Strings.Reinit();
@@ -111,11 +110,11 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             AppSettings.AuthorImageCacheDays = (int)_NO_TRANSLATE_DaysToCacheImages.Value;
 
             AppSettings.ShowAuthorGravatar = ShowAuthorGravatar.Checked;
-            AppSettings.GravatarFallbackService = NoImageService.Text;
+            AppSettings.GravatarDefaultImageType = NoImageService.Text;
 
             AppSettings.RelativeDate = chkShowRelativeDate.Checked;
 
-            AppSettings.Dictionary = Dictionary.Text;
+            AppSettings.Dictionary = Dictionary.SelectedIndex == 0 ? "none" : Dictionary.Text;
 
             AppSettings.DiffFont = _diffFont;
             AppSettings.Font = _applicationFont;
@@ -127,7 +126,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
             try
             {
                 Dictionary.Items.Clear();
-                Dictionary.Items.Add("None");
+                Dictionary.Items.Add(_noDictFile.Text);
                 foreach (
                     string fileName in
                         Directory.GetFiles(AppSettings.GetDictionaryDir(), "*.dic", SearchOption.TopDirectoryOnly))
@@ -200,7 +199,7 @@ namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 
         private void ClearImageCache_Click(object sender, EventArgs e)
         {
-            GravatarService.ClearImageCache();
+            _avatarCache.ClearAsync();
         }
 
         private void helpTranslate_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

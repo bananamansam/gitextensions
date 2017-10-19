@@ -12,7 +12,6 @@ using System.Reactive.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using GitCommands.Settings;
 using GitCommands.Utils;
 using GitUIPluginInterfaces;
 using GitUIPluginInterfaces.BuildServerIntegration;
@@ -49,7 +48,7 @@ namespace JenkinsIntegration
 
         private IList<Task<IEnumerable<string>>> _getBuildUrls;
 
-        public void Initialize(IBuildServerWatcher buildServerWatcher, ISettingsSource config)
+        public void Initialize(IBuildServerWatcher buildServerWatcher, ISettingsSource config, Func<string, bool> isCommitInRevisionGrid)
         {
             if (_buildServerWatcher != null)
                 throw new InvalidOperationException("Already initialized");
@@ -65,11 +64,9 @@ namespace JenkinsIntegration
                                      ? new Uri(hostName, UriKind.Absolute)
                                      : new Uri(string.Format("{0}://{1}:8080", Uri.UriSchemeHttp, hostName), UriKind.Absolute);
 
-                _httpClient = new HttpClient
-                    {
-                        Timeout = TimeSpan.FromMinutes(2),
-                        BaseAddress = baseAdress
-                    };
+                _httpClient = new HttpClient(new HttpClientHandler(){ UseDefaultCredentials = true});
+                _httpClient.Timeout = TimeSpan.FromMinutes(2);
+                _httpClient.BaseAddress = baseAdress;
 
                 var buildServerCredentials = buildServerWatcher.GetBuildServerCredentials(this, true);
 
@@ -290,6 +287,10 @@ namespace JenkinsIntegration
                     {
                         return httpContent.ReadAsStreamAsync();
                     }
+                }
+                else if (task.Result.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    unauthorized = true;
                 }
             }
 

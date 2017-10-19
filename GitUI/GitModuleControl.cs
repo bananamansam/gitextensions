@@ -2,19 +2,23 @@
 using System.ComponentModel;
 using System.Windows.Forms;
 using GitCommands;
+using ResourceManager;
 
 namespace GitUI
 {
-    /// <summary>Base class for a <see cref="UserControl"/> requiring 
+    /// <summary>Base class for a <see cref="UserControl"/> requiring
     /// <see cref="GitModule"/> and <see cref="GitUICommands"/>.</summary>
     public class GitModuleControl : GitExtensionsControl
     {
+        private readonly object _lock = new object();
+
         [Browsable(false)]
         public bool UICommandsSourceParentSearch { get; private set; }
 
         /// <summary>Occurs after the <see cref="UICommandsSource"/> is changed.</summary>
         [Browsable(false)]
-        public event GitUICommandsSourceSetEventHandler GitUICommandsSourceSet;
+        public event EventHandler<GitUICommandsSourceEventArgs> GitUICommandsSourceSet;
+
         private IGitUICommandsSource _uiCommandsSource;
 
 
@@ -45,18 +49,22 @@ namespace GitUI
         [Browsable(false)]
         public GitUICommands UICommands
         {
-            get
-            {
-                return UICommandsSource.UICommands;
-            }
+            get { return UICommandsSource.UICommands; }
         }
 
-        /// <summary>true if <see cref="UICommands"/> has been initialzed.</summary>
+        /// <summary>true if <see cref="UICommands"/> has been initialized.</summary>
         public bool IsUICommandsInitialized
         {
             get
             {
-                return UICommandsSource != null;
+                try
+                {
+                    return UICommandsSource != null;
+                }
+                catch (InvalidOperationException)
+                {
+                    return false;
+                }
             }
         }
         /// <summary>Gets the <see cref="UICommands"/>' <see cref="GitModule"/> reference.</summary>
@@ -98,7 +106,7 @@ namespace GitUI
             if (!UICommandsSourceParentSearch)
                 return;
 
-            lock (this)
+            lock (_lock)
             {
                 if (_uiCommandsSource != null)
                     return;
@@ -113,6 +121,8 @@ namespace GitUI
                         parent = parent.Parent;
                 }
 
+                if(cmdsSrc == null)
+                    throw new InvalidOperationException("The UI Command Source is not available for this control. Are you calling methods before adding it to the parent control?");
                 UICommandsSource = cmdsSrc;
             }
         }
@@ -123,7 +133,7 @@ namespace GitUI
                 || base.ExecuteCommand(command);
         }
 
-        /// <summary>Tries to run scripts identified by a <paramref name="command"/> 
+        /// <summary>Tries to run scripts identified by a <paramref name="command"/>
         /// and returns true if any executed.</summary>
         protected bool ExecuteScriptCommand(int command)
         {
@@ -135,7 +145,7 @@ namespace GitUI
         {
             var handler = GitUICommandsSourceSet;
             if (handler != null)
-                handler(this, newSource);
+                handler(this, new GitUICommandsSourceEventArgs(newSource));
         }
     }
 }

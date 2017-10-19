@@ -1,5 +1,6 @@
 ﻿using System;
 using GitCommands;
+using ResourceManager;
 
 namespace GitUI.RevisionGridClasses
 {
@@ -36,6 +37,12 @@ namespace GitUI.RevisionGridClasses
             EnableFilters();
         }
 
+        private void OnSimplifyByDecorationCheckedChanged(object sender, EventArgs e)
+        {
+            AppSettings.ShowSimplifyByDecoration = SimplifyByDecorationCheck.Checked;
+            EnableFilters();
+        }
+
         private void EnableFilters()
         {
             Since.Enabled = SinceCheck.Checked;
@@ -48,8 +55,10 @@ namespace GitUI.RevisionGridClasses
 
             BranchFilterCheck.Checked = AppSettings.BranchFilterEnabled;
             CurrentBranchOnlyCheck.Checked = AppSettings.ShowCurrentBranchOnly;
+            SimplifyByDecorationCheck.Checked = AppSettings.ShowSimplifyByDecoration;
 
             CurrentBranchOnlyCheck.Enabled = BranchFilterCheck.Checked;
+            SimplifyByDecorationCheck.Enabled = BranchFilterCheck.Checked;
             BranchFilter.Enabled = BranchFilterCheck.Checked &&
                                    !CurrentBranchOnlyCheck.Checked;
         }
@@ -61,10 +70,10 @@ namespace GitUI.RevisionGridClasses
                     MessageCheck.Checked ||
                     SinceCheck.Checked ||
                     CheckUntil.Checked ||
-                    FileFilterCheck.Checked);                
+                    FileFilterCheck.Checked);
         }
 
-        public string GetFilter()
+        public string GetRevisionFilter()
         {
             var filter = "";
             if (AuthorCheck.Checked && GitCommandHelpers.VersionInUse.IsRegExStringCmdPassable(Author.Text))
@@ -81,9 +90,14 @@ namespace GitUI.RevisionGridClasses
                 filter += string.Format(" --until=\"{0}\"", Until.Value.ToString("yyyy-MM-dd hh:mm:ss"));
             if (LimitCheck.Checked && _NO_TRANSLATE_Limit.Value > 0)
                 filter += string.Format(" --max-count=\"{0}\"", (int)_NO_TRANSLATE_Limit.Value);
-            if (FileFilterCheck.Checked)
-                filter += string.Format(" -- \"{0}\"", FileFilter.Text.Replace('\\', '/'));
+            return filter;
+        }
 
+        public string GetPathFilter()
+        {
+            var filter = "";
+            if (FileFilterCheck.Checked)
+                filter += string.Format(" \"{0}\"", FileFilter.Text.ToPosixPath());
             return filter;
         }
 

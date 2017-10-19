@@ -3,6 +3,9 @@ using System.Diagnostics;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Config;
+
+using GitUI.UserControls;
+
 using ResourceManager;
 
 namespace GitUI
@@ -104,7 +107,7 @@ namespace GitUI
                     {
                         // To prevent future authentication errors, save this key for this remote.
                         if (!String.IsNullOrEmpty(loadedKey) && !String.IsNullOrEmpty(this.Remote) && 
-                            String.IsNullOrEmpty(Module.GetPathSetting("remote.{0}.puttykeyfile")))
+                            String.IsNullOrEmpty(Module.GetSetting("remote.{0}.puttykeyfile")))
                             Module.SetPathSetting(string.Format("remote.{0}.puttykeyfile", this.Remote), loadedKey);
 
                         // Retry the command.
@@ -118,7 +121,7 @@ namespace GitUI
 
                     if (string.IsNullOrEmpty(UrlTryingToConnect))
                     {
-                        remoteUrl = Module.GetPathSetting(string.Format(SettingKeyString.RemoteUrl, Remote));
+                        remoteUrl = Module.GetSetting(string.Format(SettingKeyString.RemoteUrl, Remote));
                         if (string.IsNullOrEmpty(remoteUrl))
                             remoteUrl = Remote;
                     }
@@ -152,24 +155,31 @@ namespace GitUI
             return false;
         }
 
-        protected override void DataReceived(object sender, DataReceivedEventArgs e)
+        protected override void DataReceived(object sender, TextEventArgs e)
         {
             if (Plink)
             {
-                if (e.Data.StartsWith("If you trust this host, enter \"y\" to add the key to"))
+                if (e.Text.Contains("If you trust this host, enter \"y\" to add the key to"))
                 {
                     if (MessageBox.Show(this, _fingerprintNotRegistredText.Text, _fingerprintNotRegistredTextCaption.Text, MessageBoxButtons.YesNo) == DialogResult.Yes)
                     {
-                        string remoteUrl = Module.GetPathSetting(string.Format(SettingKeyString.RemoteUrl, Remote));
-                        remoteUrl = string.IsNullOrEmpty(remoteUrl) ? Remote : remoteUrl;
+                        string remoteUrl;
+                        if (string.IsNullOrEmpty(UrlTryingToConnect))
+                        {
+                            remoteUrl = Module.GetSetting(string.Format(SettingKeyString.RemoteUrl, Remote));
+                            remoteUrl = string.IsNullOrEmpty(remoteUrl) ? Remote : remoteUrl;
+                        }
+                        else
+                            remoteUrl = UrlTryingToConnect;
                         remoteUrl = GitCommandHelpers.GetPlinkCompatibleUrl(remoteUrl);
 
                         Module.RunExternalCmdShowConsole("cmd.exe", string.Format("/k \"\"{0}\" {1}\"", AppSettings.Plink, remoteUrl));
 
                         restart = true;
+                        Reset();
                     }
-
-                    KillGitCommand();
+                    else
+                        KillGitCommand();
                 }
             }
             base.DataReceived(sender, e);

@@ -1,23 +1,24 @@
-﻿using System;
-using System.IO;
-using System.Windows.Forms;
+﻿using System.IO;
 using GitUIPluginInterfaces;
+using ResourceManager;
 
 namespace GitStatistics
 {
     public class GitStatisticsPlugin : GitPluginBase, IGitPluginForRepository
     {
+        public GitStatisticsPlugin()
+        {
+            SetNameAndDescription("Statistics");
+            Translate();
+        }
+
         StringSetting CodeFiles = new StringSetting("Code files",
-                                "*.c;*.cpp;*.cc;*.h;*.hpp;*.inl;*.idl;*.asm;*.inc;*.cs;*.xsd;*.wsdl;*.xml;*.htm;*.html;*.css;" + 
-                                "*.vbs;*.vb;*.sql;*.aspx;*.asp;*.php;*.nav;*.pas;*.py;*.rb;*.js");
+                                "*.c;*.cpp;*.cc;*.cxx;*.h;*.hpp;*.hxx;*.inl;*.idl;*.asm;*.inc;*.cs;*.xsd;*.wsdl;*.xml;*.htm;*.html;*.css;" +
+                                "*.vbs;*.vb;*.sql;*.aspx;*.asp;*.php;*.nav;*.pas;*.py;*.rb;*.js;*.mk;*.java");
         StringSetting IgnoreDirectories = new StringSetting("Directories to ignore (EndsWith)", "\\Debug;\\Release;\\obj;\\bin;\\lib");
         BoolSetting IgnoreSubmodules = new BoolSetting("Ignore submodules", true);
 
         #region IGitPlugin Members
-        public override string Description
-        {
-            get { return "Statistics"; }
-        }
 
         public override System.Collections.Generic.IEnumerable<ISetting> GetSettings()
         {
@@ -30,25 +31,14 @@ namespace GitStatistics
         {
             if (string.IsNullOrEmpty(gitUIEventArgs.GitModule.WorkingDir))
                 return false;
-
+            bool countSubmodule = !IgnoreSubmodules.ValueOrDefault(Settings);
             using (var formGitStatistics =
-                new FormGitStatistics(gitUIEventArgs.GitModule, CodeFiles[Settings])
+                new FormGitStatistics(gitUIEventArgs.GitModule, CodeFiles.ValueOrDefault(Settings), countSubmodule)
                     {
-                        DirectoriesToIgnore = IgnoreDirectories[Settings]
+                        DirectoriesToIgnore = IgnoreDirectories.ValueOrDefault(Settings)
                     })
             {
-
-                if (IgnoreSubmodules[Settings].Value)
-                {
-                    foreach (var submodule in gitUIEventArgs.GitModule.GetSubmodulesInfo())
-                    {
-                        formGitStatistics.DirectoriesToIgnore += ";";
-                        formGitStatistics.DirectoriesToIgnore += Path.Combine(gitUIEventArgs.GitModule.WorkingDir, submodule.LocalPath);
-                    }
-                }
-
                 formGitStatistics.DirectoriesToIgnore = formGitStatistics.DirectoriesToIgnore.Replace("/", "\\");
-                formGitStatistics.WorkingDir = new DirectoryInfo(gitUIEventArgs.GitModule.WorkingDir);
 
                 formGitStatistics.ShowDialog(gitUIEventArgs.OwnerForm);
             }

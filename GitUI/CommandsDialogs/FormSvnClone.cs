@@ -20,13 +20,13 @@ namespace GitUI.CommandsDialogs
             new TranslationString("Authors file \"{0}\" does not exists. Continue without authors file?");
 
         private readonly TranslationString _questionContinueWithoutAuthorsCaption = new TranslationString("Authors file");
-        private readonly GitModuleChangedEventHandler GitModuleChanged;
+        private readonly EventHandler<GitModuleEventArgs> GitModuleChanged;
 
         private FormSvnClone()
             : this(null, null)
         { }
 
-        public FormSvnClone(GitUICommands aCommands, GitModuleChangedEventHandler GitModuleChanged)
+        public FormSvnClone(GitUICommands aCommands, EventHandler<GitModuleEventArgs> GitModuleChanged)
             : base(aCommands)
         {
             this.GitModuleChanged = GitModuleChanged;
@@ -77,7 +77,7 @@ namespace GitUI.CommandsDialogs
                 if (ShowInTaskbar == false && AskIfNewRepositoryShouldBeOpened(dirTo))
                 {
                     if (GitModuleChanged != null)
-                        GitModuleChanged(new GitModule(dirTo));
+                        GitModuleChanged(this, new GitModuleEventArgs(new GitModule(dirTo)));
                 }
                 Close();
             }
@@ -103,10 +103,11 @@ namespace GitUI.CommandsDialogs
 
         private void browseButton_Click(object sender, EventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog { SelectedPath = this._NO_TRANSLATE_destinationComboBox.Text })
+            var userSelectedPath = OsShellUtil.PickFolder(this, this._NO_TRANSLATE_destinationComboBox.Text);
+
+            if (userSelectedPath != null)
             {
-                if (dialog.ShowDialog(this) == DialogResult.OK)
-                    this._NO_TRANSLATE_destinationComboBox.Text = dialog.SelectedPath;
+                this._NO_TRANSLATE_destinationComboBox.Text = userSelectedPath;
             }
         }
 

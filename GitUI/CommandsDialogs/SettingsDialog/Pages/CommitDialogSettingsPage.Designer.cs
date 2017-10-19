@@ -1,4 +1,4 @@
-﻿namespace GitUI.CommandsDialogs.SettingsDialog.Pages
+namespace GitUI.CommandsDialogs.SettingsDialog.Pages
 {
     partial class CommitDialogSettingsPage
     {
@@ -30,6 +30,8 @@
         {
             this.groupBoxBehaviour = new System.Windows.Forms.GroupBox();
             this.tableLayoutPanelBehaviour = new System.Windows.Forms.TableLayoutPanel();
+            this.cbRememberAmendCommitState = new System.Windows.Forms.CheckBox();
+            this.chkAutocomplete = new System.Windows.Forms.CheckBox();
             this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages = new System.Windows.Forms.NumericUpDown();
             this.lblCommitDialogNumberOfPreviousMessages = new System.Windows.Forms.Label();
             this.chkShowErrorsWhenStagingFiles = new System.Windows.Forms.CheckBox();
@@ -39,6 +41,7 @@
             this.chkShowCommitAndPush = new System.Windows.Forms.CheckBox();
             this.chkShowResetUnstagedChanges = new System.Windows.Forms.CheckBox();
             this.chkShowResetAllChanges = new System.Windows.Forms.CheckBox();
+            this.chkAddNewlineToCommitMessageWhenMissing = new System.Windows.Forms.CheckBox();
             this.tblPullOptions = new System.Windows.Forms.TableLayoutPanel();
             this.grpDefaultPullAction = new System.Windows.Forms.GroupBox();
             this.rbRebase = new System.Windows.Forms.RadioButton();
@@ -61,7 +64,7 @@
             this.groupBoxBehaviour.Dock = System.Windows.Forms.DockStyle.Top;
             this.groupBoxBehaviour.Location = new System.Drawing.Point(0, 0);
             this.groupBoxBehaviour.Name = "groupBoxBehaviour";
-            this.groupBoxBehaviour.Size = new System.Drawing.Size(1402, 319);
+            this.groupBoxBehaviour.Size = new System.Drawing.Size(974, 270);
             this.groupBoxBehaviour.TabIndex = 56;
             this.groupBoxBehaviour.TabStop = false;
             this.groupBoxBehaviour.Text = "Behaviour";
@@ -72,30 +75,54 @@
             this.tableLayoutPanelBehaviour.ColumnCount = 2;
             this.tableLayoutPanelBehaviour.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
             this.tableLayoutPanelBehaviour.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tableLayoutPanelBehaviour.Controls.Add(this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages, 1, 3);
-            this.tableLayoutPanelBehaviour.Controls.Add(this.lblCommitDialogNumberOfPreviousMessages, 0, 3);
-            this.tableLayoutPanelBehaviour.Controls.Add(this.chkShowErrorsWhenStagingFiles, 0, 0);
-            this.tableLayoutPanelBehaviour.Controls.Add(this.chkWriteCommitMessageInCommitWindow, 0, 1);
-            this.tableLayoutPanelBehaviour.Controls.Add(this.grpAdditionalButtons, 0, 5);
-            this.tableLayoutPanelBehaviour.Controls.Add(this.chkCurrentUserPreviousCommitMessages, 0, 2);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.cbRememberAmendCommitState, 0, 6);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.chkAutocomplete, 0, 0);
+            this.tableLayoutPanelBehaviour.Controls.Add(this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages, 1, 4);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.lblCommitDialogNumberOfPreviousMessages, 0, 4);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.chkShowErrorsWhenStagingFiles, 0, 1);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.chkWriteCommitMessageInCommitWindow, 0, 3);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.grpAdditionalButtons, 0, 7);
+            this.tableLayoutPanelBehaviour.Controls.Add(this.chkAddNewlineToCommitMessageWhenMissing, 0, 2);
             this.tableLayoutPanelBehaviour.Dock = System.Windows.Forms.DockStyle.Top;
             this.tableLayoutPanelBehaviour.Location = new System.Drawing.Point(3, 19);
             this.tableLayoutPanelBehaviour.Name = "tableLayoutPanelBehaviour";
-            this.tableLayoutPanelBehaviour.RowCount = 6;
+            this.tableLayoutPanelBehaviour.RowCount = 8;
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
-            this.tableLayoutPanelBehaviour.Size = new System.Drawing.Size(1396, 297);
+            this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanelBehaviour.RowStyles.Add(new System.Windows.Forms.RowStyle());
+            this.tableLayoutPanelBehaviour.Size = new System.Drawing.Size(968, 250);
             this.tableLayoutPanelBehaviour.TabIndex = 57;
+            // 
+            // cbRememberAmendCommitState
+            // 
+            this.cbRememberAmendCommitState.AutoSize = true;
+            this.cbRememberAmendCommitState.Location = new System.Drawing.Point(3, 135);
+            this.cbRememberAmendCommitState.Name = "cbRememberAmendCommitState";
+            this.cbRememberAmendCommitState.Size = new System.Drawing.Size(304, 17);
+            this.cbRememberAmendCommitState.TabIndex = 5;
+            this.cbRememberAmendCommitState.Text = "Remember \'Amend commit\' checkbox on commit form close";
+            this.cbRememberAmendCommitState.UseVisualStyleBackColor = true;
+            // 
+            // chkAutocomplete
+            // 
+            this.chkAutocomplete.AutoSize = true;
+            this.chkAutocomplete.Location = new System.Drawing.Point(3, 3);
+            this.chkAutocomplete.Name = "chkAutocomplete";
+            this.chkAutocomplete.Size = new System.Drawing.Size(220, 17);
+            this.chkAutocomplete.TabIndex = 0;
+            this.chkAutocomplete.Text = "Provide auto-completion in commit dialog";
+            this.chkAutocomplete.UseVisualStyleBackColor = true;
             // 
             // _NO_TRANSLATE_CommitDialogNumberOfPreviousMessages
             // 
-            this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.Location = new System.Drawing.Point(338, 93);
+            this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.Location = new System.Drawing.Point(313, 108);
             this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.Maximum = new decimal(new int[] {
-            10,
+            999,
             0,
             0,
             0});
@@ -106,7 +133,7 @@
             0});
             this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.Name = "_NO_TRANSLATE_CommitDialogNumberOfPreviousMessages";
             this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.Size = new System.Drawing.Size(123, 23);
-            this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.TabIndex = 3;
+            this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.TabIndex = 4;
             this._NO_TRANSLATE_CommitDialogNumberOfPreviousMessages.Value = new decimal(new int[] {
             1,
             0,
@@ -117,7 +144,7 @@
             // 
             this.lblCommitDialogNumberOfPreviousMessages.Anchor = System.Windows.Forms.AnchorStyles.Left;
             this.lblCommitDialogNumberOfPreviousMessages.AutoSize = true;
-            this.lblCommitDialogNumberOfPreviousMessages.Location = new System.Drawing.Point(3, 97);
+            this.lblCommitDialogNumberOfPreviousMessages.Location = new System.Drawing.Point(3, 112);
             this.lblCommitDialogNumberOfPreviousMessages.Name = "lblCommitDialogNumberOfPreviousMessages";
             this.lblCommitDialogNumberOfPreviousMessages.Size = new System.Drawing.Size(261, 15);
             this.lblCommitDialogNumberOfPreviousMessages.TabIndex = 2;
@@ -126,20 +153,20 @@
             // chkShowErrorsWhenStagingFiles
             // 
             this.chkShowErrorsWhenStagingFiles.AutoSize = true;
-            this.chkShowErrorsWhenStagingFiles.Location = new System.Drawing.Point(3, 3);
+            this.chkShowErrorsWhenStagingFiles.Location = new System.Drawing.Point(3, 26);
             this.chkShowErrorsWhenStagingFiles.Name = "chkShowErrorsWhenStagingFiles";
             this.chkShowErrorsWhenStagingFiles.Size = new System.Drawing.Size(186, 19);
-            this.chkShowErrorsWhenStagingFiles.TabIndex = 0;
+            this.chkShowErrorsWhenStagingFiles.TabIndex = 1;
             this.chkShowErrorsWhenStagingFiles.Text = "Show errors when staging files";
             this.chkShowErrorsWhenStagingFiles.UseVisualStyleBackColor = true;
             // 
             // chkWriteCommitMessageInCommitWindow
             // 
             this.chkWriteCommitMessageInCommitWindow.AutoSize = true;
-            this.chkWriteCommitMessageInCommitWindow.Location = new System.Drawing.Point(3, 28);
+            this.chkWriteCommitMessageInCommitWindow.Location = new System.Drawing.Point(3, 72);
             this.chkWriteCommitMessageInCommitWindow.Name = "chkWriteCommitMessageInCommitWindow";
             this.chkWriteCommitMessageInCommitWindow.Size = new System.Drawing.Size(329, 34);
-            this.chkWriteCommitMessageInCommitWindow.TabIndex = 1;
+            this.chkWriteCommitMessageInCommitWindow.TabIndex = 3;
             this.chkWriteCommitMessageInCommitWindow.Text = "Compose commit messages in Commit dialog\r\n(otherwise the message will be requeste" +
     "d during commit)";
             this.chkWriteCommitMessageInCommitWindow.UseVisualStyleBackColor = true;
@@ -151,10 +178,10 @@
             this.tableLayoutPanelBehaviour.SetColumnSpan(this.grpAdditionalButtons, 2);
             this.grpAdditionalButtons.Controls.Add(this.flowLayoutPanel1);
             this.grpAdditionalButtons.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.grpAdditionalButtons.Location = new System.Drawing.Point(3, 122);
+            this.grpAdditionalButtons.Location = new System.Drawing.Point(3, 158);
             this.grpAdditionalButtons.Name = "grpAdditionalButtons";
-            this.grpAdditionalButtons.Size = new System.Drawing.Size(1390, 172);
-            this.grpAdditionalButtons.TabIndex = 5;
+            this.grpAdditionalButtons.Size = new System.Drawing.Size(962, 89);
+            this.grpAdditionalButtons.TabIndex = 6;
             this.grpAdditionalButtons.TabStop = false;
             this.grpAdditionalButtons.Text = "Show additional buttons in commit button area";
             // 
@@ -170,7 +197,7 @@
             this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 19);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(1384, 150);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(956, 69);
             this.flowLayoutPanel1.TabIndex = 0;
             // 
             // chkShowCommitAndPush
@@ -203,16 +230,16 @@
             this.chkShowResetAllChanges.Text = "Reset All Changes";
             this.chkShowResetAllChanges.UseVisualStyleBackColor = true;
             // 
-            // tblPullOptions
+            // chkAddNewlineToCommitMessageWhenMissing
             // 
-            this.tblPullOptions.AutoSize = true;
-            this.tblPullOptions.ColumnCount = 2;
-            this.tblPullOptions.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tblPullOptions.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-            this.tblPullOptions.Controls.Add(this.grpDefaultPullAction, 1, 0);
-            this.tblPullOptions.Controls.Add(this.chkPull, 0, 0);
-            this.tblPullOptions.Location = new System.Drawing.Point(3, 78);
-            this.tblPullOptions.Name = "tblPullOptions";
+            this.chkAddNewlineToCommitMessageWhenMissing.AutoSize = true;
+            this.chkAddNewlineToCommitMessageWhenMissing.Location = new System.Drawing.Point(3, 49);
+            this.chkAddNewlineToCommitMessageWhenMissing.Name = "chkAddNewlineToCommitMessageWhenMissing";
+            this.chkAddNewlineToCommitMessageWhenMissing.Size = new System.Drawing.Size(271, 17);
+            this.chkAddNewlineToCommitMessageWhenMissing.TabIndex = 2;
+            this.chkAddNewlineToCommitMessageWhenMissing.Text = "Ensure the second line of commit message is empty";
+            this.chkAddNewlineToCommitMessageWhenMissing.UseVisualStyleBackColor = true;
+            // 
             this.tblPullOptions.RowCount = 1;
             this.tblPullOptions.RowStyles.Add(new System.Windows.Forms.RowStyle());
             this.tblPullOptions.Size = new System.Drawing.Size(205, 69);
@@ -283,7 +310,7 @@
             this.AutoScroll = true;
             this.Controls.Add(this.groupBoxBehaviour);
             this.Name = "CommitDialogSettingsPage";
-            this.Size = new System.Drawing.Size(1402, 871);
+            this.Size = new System.Drawing.Size(974, 452);
             this.groupBoxBehaviour.ResumeLayout(false);
             this.groupBoxBehaviour.PerformLayout();
             this.tableLayoutPanelBehaviour.ResumeLayout(false);
@@ -315,6 +342,9 @@
         private System.Windows.Forms.CheckBox chkShowCommitAndPush;
         private System.Windows.Forms.CheckBox chkShowResetUnstagedChanges;
         private System.Windows.Forms.CheckBox chkShowResetAllChanges;
+        private System.Windows.Forms.CheckBox chkAddNewlineToCommitMessageWhenMissing;
+        private System.Windows.Forms.CheckBox chkAutocomplete;
+        private System.Windows.Forms.CheckBox cbRememberAmendCommitState;
         private System.Windows.Forms.CheckBox chkCurrentUserPreviousCommitMessages;
         private System.Windows.Forms.TableLayoutPanel tblPullOptions;
         private System.Windows.Forms.CheckBox chkPull;

@@ -57,11 +57,7 @@ namespace GitUI.UserControls
             IList<GitStash> stashedItems = Module.GetStashes();
             StashCount = stashedItems.Count;
 
-            GitStash currentWorkingDirStashItem = new GitStash
-            {
-                Name = _currentWorkingDirChanges.Text,
-                Message = _currentWorkingDirChanges.Text
-            };
+			GitStash currentWorkingDirStashItem = new GitStash(_currentWorkingDirChanges.Text);
 
             StashTree.Nodes.Clear();
 

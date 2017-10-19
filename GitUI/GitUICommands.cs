@@ -7,12 +7,13 @@ using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Settings;
 using GitUI.CommandsDialogs;
+using GitUI.CommandsDialogs.CommitDialog;
 using GitUI.CommandsDialogs.RepoHosting;
 using GitUI.CommandsDialogs.SettingsDialog;
 using GitUIPluginInterfaces;
 using GitUIPluginInterfaces.RepositoryHosts;
 using Gravatar;
-using Settings = GitCommands.AppSettings;
+using JetBrains.Annotations;
 using System.Globalization;
 
 namespace GitUI
@@ -20,11 +21,19 @@ namespace GitUI
     /// <summary>Contains methods to invoke GitEx forms, dialogs, etc.</summary>
     public sealed class GitUICommands : IGitUICommands
     {
+        private readonly IAvatarService _gravatarService;
+        private readonly ICommitTemplateManager _commitTemplateManager;
+
+
         public GitUICommands(GitModule module)
         {
             Module = module;
+            _commitTemplateManager = new CommitTemplateManager(module);
             RepoChangedNotifier = new ActionNotifier(
                 () => InvokeEvent(null, PostRepositoryChanged));
+
+            IImageCache avatarCache = new DirectoryImageCache(AppSettings.GravatarCachePath, AppSettings.AuthorImageCacheDays);
+            _gravatarService = new GravatarService(avatarCache);
         }
 
         public GitUICommands(string workingDir)
@@ -154,6 +163,10 @@ namespace GitUI
 
         public event GitUIEventHandler PreBrowseInitialize;
         public event GitUIEventHandler PostBrowseInitialize;
+
+        public event GitUIEventHandler PreSparseWorkingCopy;
+        public event GitUIPostActionEventHandler PostSparseWorkingCopy;
+
         /// <summary>
         /// listeners for changes being made to repository
         /// </summary>
@@ -209,18 +222,7 @@ namespace GitUI
 
         public void CacheAvatar(string email)
         {
-            FallBackService gravatarFallBack = FallBackService.Identicon;
-            try
-            {
-                gravatarFallBack =
-                    (FallBackService)Enum.Parse(typeof(FallBackService), Settings.GravatarFallbackService);
-            }
-            catch
-            {
-                Settings.GravatarFallbackService = gravatarFallBack.ToString();
-            }
-            GravatarService.CacheImage(email + ".png", email, Settings.AuthorImageSize,
-                gravatarFallBack);
+            _gravatarService.GetAvatarAsync(email, AppSettings.AuthorImageSize, AppSettings.GravatarDefaultImageType);
         }
 
         public Icon FormIcon { get { return GitExtensionsForm.ApplicationIcon; } }
@@ -243,7 +245,7 @@ namespace GitUI
             return StartBatchFileProcessDialog(null, batchFile);
         }
 
-        public bool StartCommandLineProcessDialog(GitCommand cmd, IWin32Window parentForm)
+        public bool StartCommandLineProcessDialog(IGitCommand cmd, IWin32Window parentForm)
         {
             bool executed;
 
@@ -435,7 +437,7 @@ namespace GitUI
         /// </summary>
         /// <param name="requiresValidWorkingDir">If action requires valid working directory</param>
         /// <param name="owner">Owner window</param>
-        /// <param name="changesRepo">if successfuly done action changes repo state</param>
+        /// <param name="changesRepo">if successfully done action changes repo state</param>
         /// <param name="preEvent">Event invoked before performing action</param>
         /// <param name="postEvent">Event invoked after performing action</param>
         /// <param name="action">Action to do. Return true to indicate that the action was successfully done.</param>
@@ -591,7 +593,7 @@ namespace GitUI
             return StartCreateBranchDialog(null, null);
         }
 
-        public bool StartCloneDialog(IWin32Window owner, string url, bool openedFromProtocolHandler, GitModuleChangedEventHandler GitModuleChanged)
+        public bool StartCloneDialog(IWin32Window owner, string url, bool openedFromProtocolHandler, EventHandler<GitModuleEventArgs> GitModuleChanged)
         {
             Func<bool> action = () =>
             {
@@ -603,7 +605,7 @@ namespace GitUI
             return DoActionOnRepo(owner, false, false, PreClone, PostClone, action);
         }
 
-        public bool StartCloneDialog(IWin32Window owner, string url, GitModuleChangedEventHandler GitModuleChanged)
+        public bool StartCloneDialog(IWin32Window owner, string url, EventHandler<GitModuleEventArgs> GitModuleChanged)
         {
             return StartCloneDialog(owner, url, false, GitModuleChanged);
         }
@@ -628,7 +630,7 @@ namespace GitUI
             return StartCloneDialog(null, null, false, null);
         }
 
-        public bool StartSvnCloneDialog(IWin32Window owner, GitModuleChangedEventHandler GitModuleChanged)
+        public bool StartSvnCloneDialog(IWin32Window owner, EventHandler<GitModuleEventArgs> GitModuleChanged)
         {
             Func<bool> action = () =>
             {
@@ -720,7 +722,7 @@ namespace GitUI
                 return false;
             Func<bool> action = () =>
             {
-                return FormProcess.ShowDialog(owner, Module, Settings.GitCommand, GitSvnCommandHelpers.DcommitCmd());
+                return FormProcess.ShowDialog(owner, Module, AppSettings.GitCommand, GitSvnCommandHelpers.DcommitCmd());
             };
 
             return DoActionOnRepo(owner, true, true, PreSvnDcommit, PostSvnDcommit, action);
@@ -737,7 +739,7 @@ namespace GitUI
                 return false;
             Func<bool> action = () =>
             {
-                FormProcess.ShowDialog(owner, Module, Settings.GitCommand, GitSvnCommandHelpers.RebaseCmd());
+                FormProcess.ShowDialog(owner, Module, AppSettings.GitCommand, GitSvnCommandHelpers.RebaseCmd());
                 return true;
             };
 
@@ -755,7 +757,7 @@ namespace GitUI
                 return false;
             Func<bool> action = () =>
             {
-                return FormProcess.ShowDialog(owner, Module, Settings.GitCommand, GitSvnCommandHelpers.FetchCmd());
+                return FormProcess.ShowDialog(owner, Module, AppSettings.GitCommand, GitSvnCommandHelpers.FetchCmd());
             };
 
             return DoActionOnRepo(owner, true, true, PreSvnFetch, PostSvnFetch, action);
@@ -766,7 +768,7 @@ namespace GitUI
             return StartSvnFetchDialog(null);
         }
 
-        public bool StartInitializeDialog(IWin32Window owner, GitModuleChangedEventHandler GitModuleChanged)
+        public bool StartInitializeDialog(IWin32Window owner, EventHandler<GitModuleEventArgs> GitModuleChanged)
         {
             return StartInitializeDialog(owner, null, GitModuleChanged);
         }
@@ -776,7 +778,7 @@ namespace GitUI
             return StartInitializeDialog((IWin32Window)null, null);
         }
 
-        public bool StartInitializeDialog(IWin32Window owner, string dir, GitModuleChangedEventHandler GitModuleChanged)
+        public bool StartInitializeDialog(IWin32Window owner, string dir, EventHandler<GitModuleEventArgs> GitModuleChanged)
         {
             Func<bool> action = () =>
             {
@@ -911,6 +913,34 @@ namespace GitUI
         public bool StartViewPatchDialog()
         {
             return StartViewPatchDialog(null, null);
+        }
+
+        public bool StartSparseWorkingCopyDialog()
+        {
+            return StartSparseWorkingCopyDialog(null);
+        }
+
+        public bool StartSparseWorkingCopyDialog([CanBeNull] IWin32Window owner)
+        {
+            Func<bool> action = () =>
+            {
+                using(var form = new FormSparseWorkingCopy(this))
+                    form.ShowDialog(owner);
+
+                return true;
+            };
+
+            return DoActionOnRepo(owner, true, false, PreSparseWorkingCopy, PostSparseWorkingCopy, action);
+        }
+
+        public void AddCommitTemplate(string key, Func<string> addingText)
+        {
+            _commitTemplateManager.Register(key, addingText);
+        }
+
+        public void RemoveCommitTemplate(string key)
+        {
+            _commitTemplateManager.Unregister(key);
         }
 
         public bool StartFormatPatchDialog(IWin32Window owner)
@@ -1081,6 +1111,7 @@ namespace GitUI
             return DoActionOnRepo(owner, true, true, PreCherryPick, PostCherryPick, action);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2202:Do not dispose objects multiple times", Justification = "It seems that all prevForm variable values are different so there is not a double dispose here. However the logic is better to be rewritten")]
         public bool StartCherryPickDialog(IWin32Window owner, IEnumerable<GitRevision> revisions)
         {
             if (revisions == null)
@@ -1198,11 +1229,11 @@ namespace GitUI
             return StartDeleteTagDialog(null, "");
         }
 
-        public bool StartEditGitIgnoreDialog(IWin32Window owner)
+        public bool StartEditGitIgnoreDialog(IWin32Window owner, bool localExcludes)
         {
             Func<bool> action = () =>
             {
-                using (var form = new FormGitIgnore(this))
+                using (var form = new FormGitIgnore(this, localExcludes))
                     form.ShowDialog(owner);
 
                 return true;
@@ -1211,17 +1242,16 @@ namespace GitUI
             return DoActionOnRepo(owner, true, false, PreEditGitIgnore, PostEditGitIgnore, action);
         }
 
-        public bool StartEditGitIgnoreDialog()
+        public bool StartEditGitIgnoreDialog(bool localExcludes)
         {
-            return StartEditGitIgnoreDialog(null);
+            return StartEditGitIgnoreDialog(null, localExcludes);
         }
 
-        public bool StartAddToGitIgnoreDialog(IWin32Window owner, params string[] filePattern)
+        public bool StartAddToGitIgnoreDialog(IWin32Window owner, bool localExclude, params string[] filePattern)
         {
-
             Func<bool> action = () =>
             {
-                using (var frm = new FormAddToGitIgnore(this, filePattern))
+                using (var frm = new FormAddToGitIgnore(this, localExclude, filePattern))
                     frm.ShowDialog(owner);
 
                 return true;
@@ -1470,11 +1500,11 @@ namespace GitUI
             return StartSettingsDialog(owner, GitUI.CommandsDialogs.SettingsDialog.Pages.GitConfigSettingsPage.GetPageReference());
         }
 
-        public bool StartBrowseDialog(IWin32Window owner, string filter)
+        public bool StartBrowseDialog(IWin32Window owner, string filter, string selectedCommit)
         {
             if (!InvokeEvent(owner, PreBrowse))
                 return false;
-            var form = new FormBrowse(this, filter);
+            var form = new FormBrowse(this, filter, selectedCommit);
 
             if (Application.MessageLoop)
             {
@@ -1491,7 +1521,12 @@ namespace GitUI
 
         public bool StartBrowseDialog(string filter)
         {
-            return StartBrowseDialog(null, filter);
+            return StartBrowseDialog(null, filter, null);
+        }
+
+        public bool StartBrowseDialog(string filter, string selectedCommit)
+        {
+            return StartBrowseDialog(null, filter, selectedCommit);
         }
 
         public void StartFileHistoryDialog(IWin32Window owner, string fileName, GitRevision revision, bool filterByRevision, bool showBlame)
@@ -1678,11 +1713,11 @@ namespace GitUI
             return StartBlameDialog(owner, fileName, null);
         }
 
-        private bool StartBlameDialog(IWin32Window owner, string fileName, GitRevision revision)
+        private bool StartBlameDialog(IWin32Window owner, string fileName, GitRevision revision, int? initialLine = null)
         {
             return DoActionOnRepo(owner, true, false, PreBlame, PostBlame, () =>
                 {
-                    using (var frm = new FormBlame(this, fileName, revision))
+                    using (var frm = new FormBlame(this, fileName, revision, initialLine))
                         frm.ShowDialog(owner);
 
                     return true;
@@ -1690,9 +1725,9 @@ namespace GitUI
             );
         }
 
-        public bool StartBlameDialog(string fileName)
+        public bool StartBlameDialog(string fileName, int? initialLine = null)
         {
-            return StartBlameDialog(null, fileName, null);
+            return StartBlameDialog(null, fileName, null, initialLine);
         }
 
         private bool StartBlameDialog(string fileName, GitRevision revision)
@@ -1724,7 +1759,7 @@ namespace GitUI
             }
         }
 
-        public void StartCloneForkFromHoster(IWin32Window owner, IRepositoryHostPlugin gitHoster, GitModuleChangedEventHandler GitModuleChanged)
+        public void StartCloneForkFromHoster(IWin32Window owner, IRepositoryHostPlugin gitHoster, EventHandler<GitModuleEventArgs> GitModuleChanged)
         {
             WrapRepoHostingCall("View pull requests", gitHoster, gh =>
             {
@@ -1893,10 +1928,7 @@ namespace GitUI
                     Module.RunBash();
                     return;
                 case "gitignore":
-                    StartEditGitIgnoreDialog();
-                    return;
-                case "installcredhelper":
-                    InstallCredHelper();
+                    StartEditGitIgnoreDialog(false);
                     return;
                 case "init":        // [path]
                     RunInitCommand(args);
@@ -1969,19 +2001,6 @@ namespace GitUI
             Application.Run(frmCmdLine);
         }
 
-        private void InstallCredHelper()
-        {
-            string gcsFileName = Path.Combine(AppSettings.GetInstallDir(), @"GitCredentialWinStore\git-credential-winstore.exe");
-            if (!File.Exists(gcsFileName))
-            {
-                return;
-            }
-
-            var configFileGlobalSettings = ConfigFileSettings.CreateGlobal(false);
-            configFileGlobalSettings.SetValue("credential.helper", "!\"" + gcsFileName + "\"");
-            configFileGlobalSettings.Save();
-        }
-
         private void Uninstall()
         {
             var configFileGlobalSettings = ConfigFileSettings.CreateGlobal(false);
@@ -1992,11 +2011,6 @@ namespace GitUI
                 configFileGlobalSettings.SetValue("core.editor", "");
             }
 
-            var credentialHelper = configFileGlobalSettings.GetValue("credential.helper");
-            if (credentialHelper.ToLowerInvariant().Contains(AppSettings.GetInstallDir().ToLowerInvariant()))
-            {
-                configFileGlobalSettings.SetValue("credential.helper", "");
-            }
             configFileGlobalSettings.Save();
         }
 
@@ -2020,7 +2034,7 @@ namespace GitUI
 
         private void RunBrowseCommand(string[] args)
         {
-            StartBrowseDialog(GetParameterOrEmptyStringAsDefault(args, "-filter"));
+            StartBrowseDialog(GetParameterOrEmptyStringAsDefault(args, "-filter"), GetParameterOrEmptyStringAsDefault(args, "-commit"));
         }
 
         private static string GetParameterOrEmptyStringAsDefault(string[] args, string paramName)
@@ -2081,7 +2095,7 @@ namespace GitUI
             //Remove working directory from filename. This is to prevent filenames that are too
             //long while there is room left when the workingdir was not in the path.
             string fileHistoryFileName = String.IsNullOrEmpty(Module.WorkingDir) ? args[2] :
-                args[2].Replace(Module.WorkingDir, "").Replace('\\', '/');
+                args[2].Replace(Module.WorkingDir, "").ToPosixPath();
 
             StartFileHistoryDialog(fileHistoryFileName);
         }
@@ -2106,8 +2120,19 @@ namespace GitUI
         {
             // Remove working directory from filename. This is to prevent filenames that are too
             // long while there is room left when the workingdir was not in the path.
-            string filenameFromBlame = args[2].Replace(Module.WorkingDir, "").Replace('\\', '/');
-            StartBlameDialog(filenameFromBlame);
+            string filenameFromBlame = args[2].Replace(Module.WorkingDir, "").ToPosixPath();
+
+            int? initialLine = null;
+            if( args.Length >= 4 )
+            {
+                int temp;
+                if( int.TryParse( args[3], out temp ) )
+                {
+                    initialLine = temp;
+                }
+            }
+
+            StartBlameDialog(filenameFromBlame, initialLine);
         }
 
         private void RunMergeToolOrConflictCommand(Dictionary<string, string> arguments)
@@ -2163,13 +2188,13 @@ namespace GitUI
         private static void UpdateSettingsBasedOnArguments(Dictionary<string, string> arguments)
         {
             if (arguments.ContainsKey("merge"))
-                Settings.FormPullAction = Settings.PullAction.Merge;
+                AppSettings.FormPullAction = AppSettings.PullAction.Merge;
             if (arguments.ContainsKey("rebase"))
-                Settings.FormPullAction = Settings.PullAction.Rebase;
+                AppSettings.FormPullAction = AppSettings.PullAction.Rebase;
             if (arguments.ContainsKey("fetch"))
-                Settings.FormPullAction = Settings.PullAction.Fetch;
+                AppSettings.FormPullAction = AppSettings.PullAction.Fetch;
             if (arguments.ContainsKey("autostash"))
-                Settings.AutoStash = true;
+                AppSettings.AutoStash = true;
         }
 
         internal void RaisePreBrowseInitialize(IWin32Window owner)

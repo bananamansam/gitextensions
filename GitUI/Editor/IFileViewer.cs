@@ -4,7 +4,15 @@ using System.Windows.Forms;
 
 namespace GitUI.Editor
 {
-    public delegate void SelectedLineChangedEventHandler(object sender, int selectedLine);
+    public class SelectedLineEventArgs : EventArgs
+    {
+        public SelectedLineEventArgs(int selectedLine)
+        {
+            SelectedLine = selectedLine;
+        }
+
+        public int SelectedLine { get; private set; }
+    }
 
     public interface IFileViewer
     {
@@ -13,7 +21,7 @@ namespace GitUI.Editor
         event EventHandler MouseLeave;
         event EventHandler TextChanged;
         event EventHandler ScrollPosChanged;
-        event SelectedLineChangedEventHandler SelectedLineChanged;
+        event EventHandler<SelectedLineEventArgs> SelectedLineChanged;
         event KeyEventHandler KeyDown;
         event EventHandler DoubleClick;
 
@@ -21,7 +29,7 @@ namespace GitUI.Editor
         void Find();
 
         string GetText();
-        void SetText(string text);
+        void SetText(string text, bool isDiff = false);
         void SetHighlighting(string syntax);
         void SetHighlightingForFile(string filename);
         void HighlightLine(int line, Color color);
@@ -39,7 +47,7 @@ namespace GitUI.Editor
         bool ShowTabs { get; set; }
         bool IsReadOnly { get; set; }
         bool Visible { get; set; }
-        
+
         int FirstVisibleLine { get; set; }
         int GetLineFromVisualPosY(int visualPosY);
         int LineAtCaret { get; }
@@ -47,6 +55,12 @@ namespace GitUI.Editor
         int TotalNumberOfLines { get; }
         //lineNumber is 0 based
         void GoToLine(int lineNumber);
+
+        /// <summary>
+        /// Indicates if the Goto line UI is applicable or not.
+        /// Code-behind goto line function is always availabe, so we can goto next diff section.
+        /// </summary>
+        bool IsGotoLineUIApplicable();
         Font Font { get; set; }
         void FocusTextArea();
 

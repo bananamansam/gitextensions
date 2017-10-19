@@ -16,6 +16,8 @@ namespace GitUI.CommandsDialogs
         /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
         protected override void Dispose(bool disposing)
         {
+            _asyncLoader.Cancel();
+            _asyncLoader.Dispose();
             if (disposing && (components != null))
             {
                 components.Dispose();
@@ -52,7 +54,9 @@ namespace GitUI.CommandsDialogs
             this.chkIncludeUntrackedFiles = new System.Windows.Forms.ToolStripButton();
             this.toolTip = new System.Windows.Forms.ToolTip(this.components);
             ((System.ComponentModel.ISupportInitialize)(this.gitStashBindingSource)).BeginInit();
+
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
+
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.Panel2.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -97,6 +101,7 @@ namespace GitUI.CommandsDialogs
             this.splitContainer2.Location = new System.Drawing.Point(0, 0);
             this.splitContainer2.Name = "splitContainer2";
             this.splitContainer2.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            
             // 
             // splitContainer2.Panel1
             // 

@@ -8,7 +8,6 @@ using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Utils;
 using ResourceManager;
-using GitUI.UserControls.RevisionGridClasses;
 
 namespace GitUI.CommandsDialogs
 {
@@ -17,6 +16,10 @@ namespace GitUI.CommandsDialogs
         private readonly FilterRevisionsHelper _filterRevisionsHelper;
         private readonly FilterBranchHelper _filterBranchHelper;
         private readonly AsyncLoader _asyncLoader;
+        private readonly FormBrowseMenus _formBrowseMenus;
+
+        private readonly TranslationString _buildReportTabCaption =
+            new TranslationString("Build Report");
 
         private FormFileHistory()
             : this(null)
@@ -40,8 +43,14 @@ namespace GitUI.CommandsDialogs
                 tabControl1.TabPages[2].ImageIndex = 2;
             }
 
-            _filterBranchHelper = new FilterBranchHelper(toolStripBranches, toolStripDropDownButton2, FileChanges);
-            _filterRevisionsHelper = new FilterRevisionsHelper(toolStripTextBoxFilter, toolStripDropDownButton1, FileChanges, toolStripLabel2, this);
+            _filterBranchHelper = new FilterBranchHelper(toolStripBranchFilterComboBox, toolStripBranchFilterDropDownButton, FileChanges);
+            _filterRevisionsHelper = new FilterRevisionsHelper(toolStripRevisionFilterTextBox, toolStripRevisionFilterDropDownButton, FileChanges, toolStripRevisionFilterLabel, ShowFirstParent, form: this);
+
+            _formBrowseMenus = new FormBrowseMenus(FileHistoryContextMenu);
+            _formBrowseMenus.ResetMenuCommandSets();
+            _formBrowseMenus.AddMenuCommandSet(MainMenuItem.NavigateMenu, FileChanges.MenuCommands.GetNavigateMenuCommands());
+            _formBrowseMenus.AddMenuCommandSet(MainMenuItem.ViewMenu, FileChanges.MenuCommands.GetViewMenuCommands());
+            _formBrowseMenus.InsertAdditionalMainMenuItems(toolStripSeparator4);
         }
 
         public FormFileHistory(GitUICommands aCommands, string fileName, GitRevision revision, bool filterByRevision)
@@ -101,8 +110,8 @@ namespace GitUI.CommandsDialogs
             {
                 if (filter == null)
                     return;
-                FileChanges.FixedFilter = filter.Filter;
-                FileChanges.Rewriter = filter.Rewriter;
+                FileChanges.FixedRevisionFilter = filter.RevisionFilter;
+                FileChanges.FixedPathFilter = filter.PathFilter;
                 FileChanges.FiltredFileName = FileName;
                 FileChanges.AllowGraphWithFilter = true;
                 FileChanges.Load();
@@ -111,8 +120,8 @@ namespace GitUI.CommandsDialogs
 
         private class FixedFilterTuple
         {
-            public string Filter;
-            public FollowParentRewriter Rewriter;
+            public string RevisionFilter;
+            public string PathFilter;
         }
 
         private FixedFilterTuple BuildFilter(string fileName)
@@ -120,10 +129,10 @@ namespace GitUI.CommandsDialogs
             if (string.IsNullOrEmpty(fileName))
                 return null;
 
-            //Replace windows path separator to Linux path separator. 
+            //Replace windows path separator to Linux path separator.
             //This is needed to keep the file history working when started from file tree in
             //browse dialog.
-            fileName = fileName.Replace('\\', '/');
+            fileName = fileName.ToPosixPath();
 
             // we will need this later to look up proper casing for the file
             var fullFilePath = Path.Combine(Module.WorkingDir, fileName);
@@ -151,41 +160,63 @@ namespace GitUI.CommandsDialogs
             FileName = fileName;
 
             FixedFilterTuple res = new FixedFilterTuple();
+            res.PathFilter = " \"" + fileName + "\"";
             if (AppSettings.FollowRenamesInFileHistory && !Directory.Exists(fullFilePath))
             {
                 // git log --follow is not working as expected (see  http://kerneltrap.org/mailarchive/git/2009/1/30/4856404/thread)
-                FollowParentRewriter hrw = new FollowParentRewriter(fileName, delegate(string arg){
-                    Process p = Module.RunGitCmdDetached(arg);
-                    return p.StandardOutput;
-                });
-                // here we need --name-only to get the previous filenames in the revision graph
-                if (hrw.RewriteNecessary)
-                {
-                    res.Rewriter = hrw;
-                    res.Filter = " " + GitCommandHelpers.FindRenamesAndCopiesOpts() + " --name-only --follow -- \"" + fileName + "\"";
-                }
-                else
-                {
-                    res.Filter = " " + GitCommandHelpers.FindRenamesAndCopiesOpts() + " --name-only --parents -- \"" + fileName + "\"";
-                }
+                //
+                // But we can take a more complicated path to get reasonable results:
+                //  1. use git log --follow to get all previous filenames of the file we are interested in
+                //  2. use git log "list of files names" to get the history graph
+                //
+                // note: This implementation is quite a quick hack (by someone who does not speak C# fluently).
+                //
 
+                string arg = "log --format=\"%n\" --name-only --follow "+
+                    GitCommandHelpers.FindRenamesAndCopiesOpts()
+                    + " -- \"" + fileName + "\"";
+                Process p = Module.RunGitCmdDetached(arg, GitModule.LosslessEncoding);
+
+                // the sequence of (quoted) file names - start with the initial filename for the search.
+                var listOfFileNames = new StringBuilder("\"" + fileName + "\"");
+
+                // keep a set of the file names already seen
+                var setOfFileNames = new HashSet<string> { fileName };
+
+                string line;
+                do
+                {
+                    line = p.StandardOutput.ReadLine();
+                    line = GitModule.ReEncodeFileNameFromLossless(line);
+
+                    if (!string.IsNullOrEmpty(line) && setOfFileNames.Add(line))
+                    {
+                        listOfFileNames.Append(" \"");
+                        listOfFileNames.Append(line);
+                        listOfFileNames.Append('\"');
+                    }
+                } while (line != null);
+                // here we need --name-only to get the previous filenames in the revision graph
+                res.PathFilter = listOfFileNames.ToString();
+                res.RevisionFilter += " --name-only --parents" + GitCommandHelpers.FindRenamesAndCopiesOpts();
             }
             else if (AppSettings.FollowRenamesInFileHistory)
             {
                 // history of a directory
                 // --parents doesn't work with --follow enabled, but needed to graph a filtered log
-                res.Filter = " " + GitCommandHelpers.FindRenamesOpt() + " --follow --parents -- \"" + fileName + "\"";
+                res.RevisionFilter = " " + GitCommandHelpers.FindRenamesOpt() + " --follow --parents";
             }
             else
             {
                 // rename following disabled
-                res.Filter = " --parents -- \"" + fileName + "\"";
+                res.RevisionFilter = " --parents";
             }
 
             if (AppSettings.FullHistoryInFileHistory)
             {
-                res.Filter = string.Concat(" --full-history --simplify-by-decoration ", res.Filter);
+                res.RevisionFilter = string.Concat(" --full-history ", res.RevisionFilter);
             }
+
 
             return res;
         }
@@ -218,7 +249,7 @@ namespace GitUI.CommandsDialogs
             if (!fileName.IsNullOrEmpty() && !fileName.Equals(FileName))
                 Text = Text + string.Format(" ({0})", fileName);
 
-            Text += " - " + Module.WorkingDir;        
+            Text += " - " + Module.WorkingDir;
         }
 
         private void UpdateSelectedFileViewers()
@@ -234,7 +265,7 @@ namespace GitUI.CommandsDialogs
 
             if (string.IsNullOrEmpty(fileName))
                 fileName = FileName;
-            
+
             SetTitle(fileName);
 
             if (tabControl1.SelectedTab == BlameTab)
@@ -258,14 +289,14 @@ namespace GitUI.CommandsDialogs
 
             if (!EnvUtils.IsMonoRuntime())
             {
-                if (BuildReportTabPageExtension == null)
-                    BuildReportTabPageExtension = new BuildReportTabPageExtension(tabControl1);
+                if (_buildReportTabPageExtension == null)
+                    _buildReportTabPageExtension = new BuildReportTabPageExtension(tabControl1, _buildReportTabCaption.Text);
 
-                BuildReportTabPageExtension.FillBuildReport(selectedRows.Count == 1 ? revision : null);
+                _buildReportTabPageExtension.FillBuildReport(selectedRows.Count == 1 ? revision : null);
             }
         }
 
-        private BuildReportTabPageExtension BuildReportTabPageExtension;
+        private BuildReportTabPageExtension _buildReportTabPageExtension;
 
         private void TabControl1SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -410,7 +441,7 @@ namespace GitUI.CommandsDialogs
         {
             if (e.Command == "gotocommit")
             {
-                FileChanges.SetSelectedRevision(new GitRevision(Module, e.Data));
+                FileChanges.SetSelectedRevision(GitRevision.CreateForShortSha1(Module, e.Data));
             }
             else if (e.Command == "gotobranch" || e.Command == "gototag")
             {
@@ -444,6 +475,31 @@ namespace GitUI.CommandsDialogs
             AppSettings.FollowRenamesInFileHistoryExactOnly = !AppSettings.FollowRenamesInFileHistoryExactOnly;
             UpdateFollowHistoryMenuItems();
             LoadFileHistory();
+        }
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _asyncLoader.Cancel();
+                _asyncLoader.Dispose();
+                _filterRevisionsHelper.Dispose();
+                _filterBranchHelper.Dispose();
+                _formBrowseMenus.Dispose();
+
+                if (components != null)
+                    components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        private void toolStripBranchFilterComboBox_Click(object sender, EventArgs e)
+        {
+            toolStripBranchFilterComboBox.DroppedDown = true;
         }
     }
 }

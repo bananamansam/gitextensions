@@ -1,13 +1,14 @@
-﻿using System.Windows.Forms;
-using GitUIPluginInterfaces;
+﻿using GitUIPluginInterfaces;
+using ResourceManager;
 
 namespace GitFlow
 {
     public class GitFlowPlugin : GitPluginBase, IGitPluginForRepository
     {
-        public override string Description
+        public GitFlowPlugin()
         {
-            get { return "GitFlow"; }
+            SetNameAndDescription("GitFlow");
+            Translate();
         }
 
         public override bool Execute(GitUIBaseEventArgs gitUiCommands)

@@ -22,6 +22,8 @@ namespace GitUI.CommandsDialogs
         readonly TranslationString areYouSure = new TranslationString("Are you sure you want to drop the stash? This action cannot be undone.");
         readonly TranslationString dontShowAgain = new TranslationString("Don't show me this message again.");
 
+        private AsyncLoader _asyncLoader = new AsyncLoader();
+
         private FormStash()
             : this(null)
         { }
@@ -103,17 +105,13 @@ namespace GitUI.CommandsDialogs
             else if(gitStash.Branch == null) // working dir
             {
                 toolStripButton_customMessage.Enabled = true;
-                Task.Factory.StartNew(() => Module.GetAllChangedFiles())
-                    .ContinueWith((task) => LoadGitItemStatuses(task.Result),
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                _asyncLoader.Load(() => Module.GetAllChangedFiles(), LoadGitItemStatuses);
                 Clear.Enabled = false; // disallow Drop  (of current working directory)
                 Apply.Enabled = false; // disallow Apply (of current working directory)
             }
             else
             {
-                Task.Factory.StartNew(() => Module.GetStashDiffFiles(gitStash.Name))
-                    .ContinueWith((task) => LoadGitItemStatuses(task.Result),
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                _asyncLoader.Load(() => Module.GetStashDiffFiles(gitStash.Name), LoadGitItemStatuses);
                 Clear.Enabled = true; // allow Drop
                 Apply.Enabled = true; // allow Apply
 
@@ -151,7 +149,7 @@ namespace GitUI.CommandsDialogs
                         View.ViewGitItem(stashedItem.Name, stashedItem.TreeGuid);
                     else
                         View.ViewText(stashedItem.Name,
-                            GitCommandHelpers.GetSubmoduleText(Module, stashedItem.Name, stashedItem.TreeGuid));
+                            LocalizationHelpers.GetSubmoduleText(Module, stashedItem.Name, stashedItem.TreeGuid));
                 }
                 else
                 {
@@ -163,7 +161,7 @@ namespace GitUI.CommandsDialogs
                         if (patch == null)
                             return String.Empty;
                         if (stashedItem.IsSubmodule)
-                            return GitCommandHelpers.ProcessSubmodulePatch(Module, stashedItem.Name, patch);
+                            return LocalizationHelpers.ProcessSubmodulePatch(Module, stashedItem.Name, patch);
                         return patch.Text;
                     });
                 }
@@ -192,7 +190,7 @@ namespace GitUI.CommandsDialogs
         private void ClearClick(object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
-
+            var stashName = GetStashName();
             if (AppSettings.StashConfirmDropShow)
             {
                 DialogResult res = PSTaskDialog.cTaskDialog.MessageBox(
@@ -237,6 +235,11 @@ namespace GitUI.CommandsDialogs
                     Cursor.Current = Cursors.Default;
                 }
             }
+        }
+
+        private string GetStashName()
+        {
+            return ((GitStash)Stashes.SelectedItem).Name;
         }
 
         private void ApplyClick(object sender, EventArgs e)
@@ -326,7 +329,7 @@ namespace GitUI.CommandsDialogs
                 }
             }
         }
- 
+
         private void StashMessage_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left)

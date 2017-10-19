@@ -8,25 +8,25 @@ namespace Stash
 {
     class Settings
     {
-        private const string StashHttpRegex = 
-            @"https?:\/\/([\w\.\:]+\@)?(?<url>([a-zA-Z0-9\.\-]+)):?(\d+)?\/scm\/(?<project>~?\w+)\/(?<repo>\w+).git";
+        private const string StashHttpRegex =
+            @"https?:\/\/([\w\.\:]+\@)?(?<url>([a-zA-Z0-9\.\-\/]+?)):?(\d+)?\/scm\/(?<project>~?([\w\-]+?))\/(?<repo>([\w\-]+)).git";
         private const string StashSshRegex =
-            @"ssh:\/\/([\w\.]+\@)(?<url>([a-zA-Z0-9\.\-]+)):?(\d+)?\/(?<project>~?\w+)\/(?<repo>\w+).git";
+            @"ssh:\/\/([\w\.]+\@)(?<url>([a-zA-Z0-9\.\-]+)):?(\d+)?\/(?<project>~?([\w\-]+))\/(?<repo>([\w\-]+)).git";
 
-        public static Settings Parse(IGitModule gitModule, ISettingsSource setting)
+        public static Settings Parse(IGitModule gitModule, ISettingsSource settings, StashPlugin plugin)
         {
             var result = new Settings
                              {
-                                 Username = StashPlugin.StashUsername[setting],
-                                 Password = StashPlugin.StashPassword[setting],
-                                 StashUrl = StashPlugin.StashBaseURL[setting],
-                                 DisableSSL = StashPlugin.StashDisableSSL[setting].Value
+                                 Username = plugin.StashUsername.ValueOrDefault(settings),
+                                 Password = plugin.StashPassword.ValueOrDefault(settings),
+                                 StashUrl = plugin.StashBaseUrl.ValueOrDefault(settings),
+                                 DisableSSL = plugin.StashDisableSsl.ValueOrDefault(settings)
                              };
 
             var module = ((GitModule)gitModule);
 
             var remotes = module.GetRemotes()
-                .Select(r => module.GetPathSetting(string.Format(SettingKeyString.RemoteUrl, r)))
+                .Select(r => module.GetSetting(string.Format(SettingKeyString.RemoteUrl, r)))
                 .ToArray();
 
             foreach (var url in remotes)

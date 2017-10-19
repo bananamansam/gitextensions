@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 using GitCommands;
-using GitCommands.Settings;
 using GitUI.Editor;
 using ICSharpCode.TextEditor.Util;
+using ResourceManager;
 
 namespace GitUI
 {
@@ -88,16 +88,24 @@ namespace GitUI
                 }
                 else
                 {
-                    if (diffKind == DiffWithRevisionKind.DiffALocal)
-                        revisionToCmp = revisions[0].Guid;
-                    else if (diffKind == DiffWithRevisionKind.DiffBLocal)
-                        revisionToCmp = revisions[1].Guid;
-                    else if (diffKind == DiffWithRevisionKind.DiffAParentLocal)
-                        revisionToCmp = revisions[0].ParentGuids.Length == 0 ? null : revisions[0].ParentGuids[0];
-                    else if (diffKind == DiffWithRevisionKind.DiffBLocal)
-                        revisionToCmp = revisions[1].ParentGuids.Length == 0 ? null : revisions[1].ParentGuids[0];
-                    else
-                        revisionToCmp = null;
+                    switch (diffKind)
+                    {
+                        case DiffWithRevisionKind.DiffALocal:
+                            revisionToCmp = revisions[1].Guid;
+                            break;
+                        case DiffWithRevisionKind.DiffBLocal:
+                            revisionToCmp = revisions[0].Guid;
+                            break;
+                        case DiffWithRevisionKind.DiffAParentLocal:
+                            revisionToCmp = revisions[1].ParentGuids.Length == 0 ? null : revisions[1].ParentGuids[0];
+                            break;
+                        case DiffWithRevisionKind.DiffBParentLocal:
+                            revisionToCmp = revisions[0].ParentGuids.Length == 0 ? null : revisions[0].ParentGuids[0];
+                            break;
+                        default:
+                            revisionToCmp = null;
+                            break;
+                    }
                 }
 
                 if (revisionToCmp == null)
@@ -172,12 +180,12 @@ namespace GitUI
             {
                 var fullPath = Path.Combine(diffViewer.Module.WorkingDir, file.Name);
                 if (Directory.Exists(fullPath) && GitModule.IsValidGitWorkingDir(fullPath))
-                    return GitCommandHelpers.GetSubmoduleText(diffViewer.Module, file.Name.TrimEnd('/'), "");
+                    return LocalizationHelpers.GetSubmoduleText(diffViewer.Module, file.Name.TrimEnd('/'), "");
                 return FileReader.ReadFileContent(fullPath, diffViewer.Encoding);
             }
 
             if (file.IsSubmodule && file.SubmoduleStatus != null)
-                return GitCommandHelpers.ProcessSubmoduleStatus(diffViewer.Module, file.SubmoduleStatus.Result);
+                return LocalizationHelpers.ProcessSubmoduleStatus(diffViewer.Module, file.SubmoduleStatus.Result);
 
             PatchApply.Patch patch = GetItemPatch(diffViewer.Module, file, firstRevision, secondRevision,
                 diffViewer.GetExtraDiffArguments(), diffViewer.Encoding);
@@ -186,7 +194,7 @@ namespace GitUI
                 return string.Empty;
 
             if (file.IsSubmodule)
-                return GitCommandHelpers.ProcessSubmodulePatch(diffViewer.Module, file.Name, patch);
+                return LocalizationHelpers.ProcessSubmodulePatch(diffViewer.Module, file.Name, patch);
             return patch.Text;
         }
 
@@ -210,7 +218,7 @@ namespace GitUI
                     diffViewer.ViewGitItem(file.Name, file.TreeGuid);
                 else
                     diffViewer.ViewText(file.Name,
-                        GitCommandHelpers.GetSubmoduleText(diffViewer.Module, file.Name, file.TreeGuid));
+                        LocalizationHelpers.GetSubmoduleText(diffViewer.Module, file.Name, file.TreeGuid));
             }
             else
             {
@@ -332,24 +340,6 @@ namespace GitUI
 
             if (!control.IsDisposed)
                 UISynchronizationContext.Send(checkDisposedAndInvoke, state);
-        }
-
-        public static bool? GetNullableChecked(this CheckBox chx)
-        {
-            if (chx.CheckState == CheckState.Indeterminate)
-                return null;
-            else
-                return chx.Checked;
-
-        }
-
-        public static void SetNullableChecked(this CheckBox chx, bool? Checked)
-        {
-            if (Checked.HasValue)
-                chx.CheckState = Checked.Value ? CheckState.Checked : CheckState.Unchecked;
-            else
-                chx.CheckState = CheckState.Indeterminate;
-
         }
 
         public static Control FindFocusedControl(this ContainerControl container)

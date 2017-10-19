@@ -318,6 +318,22 @@ namespace GitUI
         {
             _fileLoader = fileLoader;
         }
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _search.Dispose();
+
+                if (components != null)
+                    components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
     }
 
     public class TextRange : AbstractSegment
@@ -329,7 +345,7 @@ namespace GitUI
         }
     }
 
-    /// <summary>This class finds occurrances of a search string in a text 
+    /// <summary>This class finds occurrences of a search string in a text 
     /// editor's IDocument... it's like Find box without a GUI.</summary>
     public sealed class TextEditorSearcher : IDisposable
     {
