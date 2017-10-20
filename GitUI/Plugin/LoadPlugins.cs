@@ -53,7 +53,7 @@ namespace GitUI
                             getEx(ex);
                         }
 
-                        MessageBox.Show(string.Format("Failed to load plugin {0} : \r\n{1}", pluginFile, exInfo));
+                        //MessageBox.Show(string.Format("Failed to load plugin {0} : \r\n{1}", pluginFile, exInfo));
                         Trace.WriteLine(ex.Message);
                     }
                 }
