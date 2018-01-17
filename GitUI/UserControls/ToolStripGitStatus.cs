@@ -5,18 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
+using GitUI.UserControls.ToolStripClasses;
 using GitUIPluginInterfaces;
 
 namespace GitUI
 {
     public sealed partial class ToolStripGitStatus : ToolStripMenuItem
     {
-        private static readonly Bitmap IconClean = Properties.Resources.IconClean;
-        private static readonly Bitmap IconDirty = Properties.Resources.IconDirty;
-        private static readonly Bitmap IconDirtySubmodules = Properties.Resources.IconDirtySubmodules;
-        private static readonly Bitmap IconStaged = Properties.Resources.IconStaged;
-        private static readonly Bitmap IconMixed = Properties.Resources.IconMixed;
-
         /// <summary>
         /// We often change several files at once.
         /// Wait a second so they're all changed before we try to get the status.
@@ -32,6 +27,9 @@ namespace GitUI
         private bool _statusIsUpToDate = true;
         private readonly FileSystemWatcher _workTreeWatcher = new FileSystemWatcher();
         private readonly FileSystemWatcher _gitDirWatcher = new FileSystemWatcher();
+        private readonly FileSystemWatcher _globalIgnoreWatcher = new FileSystemWatcher();
+        private string _globalIgnoreFilePath;
+        private bool _ignoredFilesAreStale;
         private string _gitPath;
         private string _submodulesPath;
         private int _nextUpdateTime;
@@ -41,6 +39,8 @@ namespace GitUI
         public string CommitTranslatedString { get; set; }
 
         private IGitUICommandsSource _UICommandsSource;
+        private ICommitIconProvider _commitIconProvider;
+
         public IGitUICommandsSource UICommandsSource
         {
             get
@@ -52,7 +52,7 @@ namespace GitUI
             {
                 _UICommandsSource = value;
                 _UICommandsSource.GitUICommandsChanged += GitUICommandsChanged;
-                GitUICommandsChanged(UICommandsSource, null);
+                GitUICommandsChanged(UICommandsSource, new GitUICommandsChangedEventArgs(oldCommands: null));
             }
         }
         
@@ -100,11 +100,61 @@ namespace GitUI
             _gitDirWatcher.Deleted += GitDirChanged;
             _gitDirWatcher.Error += WorkTreeWatcherError;
             _gitDirWatcher.IncludeSubdirectories = true;
-            _gitDirWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;            
+            _gitDirWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+
+            // Setup a file watcher to detect changes to the global ignore file. When it
+            // changes, we'll update our status.
+            _globalIgnoreWatcher.EnableRaisingEvents = false;
+            _globalIgnoreWatcher.Changed += GlobalIgnoreChanged;
+            _globalIgnoreWatcher.Created += GlobalIgnoreChanged;
+            _globalIgnoreWatcher.Deleted += GlobalIgnoreChanged;
+            _globalIgnoreWatcher.Renamed += GlobalIgnoreChanged;
+            _globalIgnoreWatcher.Error += WorkTreeWatcherError;
+            _globalIgnoreWatcher.IncludeSubdirectories = false;
+            _workTreeWatcher.NotifyFilter = NotifyFilters.LastWrite;
+
+            _commitIconProvider = new CommitIconProvider();
         }
 
-        private void GitUICommandsChanged(IGitUICommandsSource source, GitUICommands oldCommands)
+        private void GlobalIgnoreChanged(object sender, FileSystemEventArgs e)
         {
+            if (e.FullPath == _globalIgnoreFilePath)
+            {
+                _ignoredFilesAreStale = true;
+                ScheduleDeferredUpdate();
+            }
+        }
+
+        /// <summary>
+        /// Determine what file contains the global ignores.
+        /// </summary>
+        /// <remarks>
+        /// According to https://git-scm.com/docs/git-config, the following are checked in order:
+        ///  - core.excludesFile configuration,
+        ///  - $XDG_CONFIG_HOME/git/ignore, if XDG_CONFIG_HOME is set and not empty,
+        ///  - $HOME/.config/git/ignore.
+        ///  </remarks>
+        private string DetermineGlobalIgnoreFilePath()
+        {
+            string globalExcludeFile = Module.GetEffectiveSetting("core.excludesFile");
+            if (!string.IsNullOrWhiteSpace(globalExcludeFile))
+            {
+                return Path.GetFullPath(globalExcludeFile);
+            }
+
+            string xdgConfigHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
+            if (!string.IsNullOrWhiteSpace(xdgConfigHome))
+            {
+                return Path.GetFullPath(Path.Combine(xdgConfigHome, "git/ignore"));
+            }
+
+            return Path.GetFullPath(Path.Combine(GitCommandHelpers.GetHomeDir(), ".config/git/ignore"));
+        }
+
+        private void GitUICommandsChanged(object sender, GitUICommandsChangedEventArgs e)
+        {
+            var oldCommands = e.OldCommands;
+
             if (oldCommands != null)
             {
                 oldCommands.PreCheckoutBranch -= GitUICommands_PreCheckout;
@@ -122,7 +172,7 @@ namespace GitUI
                 UICommands.PostCheckoutRevision += GitUICommands_PostCheckout;
                 UICommands.PostEditGitIgnore += GitUICommands_PostEditGitIgnore;
                 
-                TryStartWatchingChanges(Module.WorkingDir, Module.GetGitDirectory());
+                TryStartWatchingChanges(Module.WorkingDir, Module.WorkingDirGitDir);
             }
         }
 
@@ -145,7 +195,7 @@ namespace GitUI
         {
             // reset status info, it was outdated
             Text = CommitTranslatedString;
-            Image = IconClean;
+            Image = _commitIconProvider.DefaultIcon;
 
             try
             {
@@ -154,6 +204,12 @@ namespace GitUI
                 {
                     _workTreeWatcher.Path = workTreePath;
                     _gitDirWatcher.Path = gitDirPath;
+                    _globalIgnoreFilePath = DetermineGlobalIgnoreFilePath();
+                    string globalIgnoreDirectory = Path.GetDirectoryName(_globalIgnoreFilePath);
+                    if (Directory.Exists(globalIgnoreDirectory))
+                    {
+                        _globalIgnoreWatcher.Path = globalIgnoreDirectory;
+                    }
                     _gitPath = Path.GetDirectoryName(gitDirPath);
                     _submodulesPath = Path.Combine(_gitPath, "modules");
                     UpdateIgnoredFiles(true);
@@ -230,7 +286,7 @@ namespace GitUI
 
             AsyncLoader.DoAsync(
                 LoadIgnoredFiles, 
-                (ignoredSet) => { _ignoredFiles = ignoredSet; },
+                (ignoredSet) => { _ignoredFiles = ignoredSet; _ignoredFilesAreStale = false; },
                 (e) => { _ignoredFiles = new HashSet<string>(); }
                 );   
         }
@@ -264,6 +320,10 @@ namespace GitUI
 
                 _commandIsRunning = true;
                 _statusIsUpToDate = true;
+                if (_ignoredFilesAreStale)
+                {
+                    UpdateIgnoredFiles(false);
+                }
                 AsyncLoader.DoAsync(RunStatusCommand, UpdatedStatusReceived, OnUpdateStatusError);
                 // Always update every 5 min, even if we don't know anything changed
                 ScheduleNextJustInCaseUpdate();
@@ -292,11 +352,7 @@ namespace GitUI
             if (_statusIsUpToDate)
             {
                 var allChangedFiles = GitCommandHelpers.GetAllChangedFilesFromString(Module, updatedStatus);
-                var stagedCount = allChangedFiles.Count(status => status.IsStaged);
-                var unstagedCount = allChangedFiles.Count - stagedCount;
-                var unstagedSubmodulesCount = allChangedFiles.Count(status => status.IsSubmodule && !status.IsStaged);
-
-                Image = GetStatusIcon(stagedCount, unstagedCount, unstagedSubmodulesCount);
+                Image = _commitIconProvider.GetCommitIcon(allChangedFiles);
 
                 if (allChangedFiles.Count == 0)
                     Text = CommitTranslatedString;
@@ -305,17 +361,6 @@ namespace GitUI
             }
             else
                 UpdateImmediately();
-        }
-
-        private static Image GetStatusIcon(int stagedCount, int unstagedCount, int unstagedSubmodulesCount)
-        {
-            if (stagedCount == 0 && unstagedCount == 0)
-                return IconClean;
-
-            if (stagedCount == 0)
-                return unstagedCount != unstagedSubmodulesCount ? IconDirty : IconDirtySubmodules;
-
-            return unstagedCount == 0 ? IconStaged : IconMixed;
         }
 
         private void ScheduleNextJustInCaseUpdate()
@@ -351,17 +396,20 @@ namespace GitUI
                         timerRefresh.Stop();
                         _workTreeWatcher.EnableRaisingEvents = false;
                         _gitDirWatcher.EnableRaisingEvents = false;
+                        _globalIgnoreWatcher.EnableRaisingEvents = false;
                         Visible = false;
                         return;
                     case WorkingStatus.Paused:
                         timerRefresh.Stop();
                         _workTreeWatcher.EnableRaisingEvents = false;
                         _gitDirWatcher.EnableRaisingEvents = false;
+                        _globalIgnoreWatcher.EnableRaisingEvents = false;
                         return;
                     case WorkingStatus.Started:
                         timerRefresh.Start();
                         _workTreeWatcher.EnableRaisingEvents = true;
                         _gitDirWatcher.EnableRaisingEvents = !_gitDirWatcher.Path.StartsWith(_workTreeWatcher.Path);
+                        _globalIgnoreWatcher.EnableRaisingEvents = !string.IsNullOrWhiteSpace(_globalIgnoreWatcher.Path);
                         ScheduleDeferredUpdate();
                         Visible = true;
                         return;

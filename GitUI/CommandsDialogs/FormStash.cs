@@ -22,6 +22,8 @@ namespace GitUI.CommandsDialogs
         readonly TranslationString areYouSure = new TranslationString("Are you sure you want to drop the stash? This action cannot be undone.");
         readonly TranslationString dontShowAgain = new TranslationString("Don't show me this message again.");
 
+        private AsyncLoader _asyncLoader = new AsyncLoader();
+
         private FormStash()
             : this(null)
         { }
@@ -37,6 +39,14 @@ namespace GitUI.CommandsDialogs
 
             Stashes.UICommandsSource = this;
             Stashes.AfterSelect += this.Stashes_AfterSelect;
+        }
+
+        protected override bool ProcessKey(Keys keyData)
+        {
+            if (keyData == Keys.Delete)
+                OnDropStash();
+
+            return base.ProcessKey(keyData);
         }
 
         private void ViewExtraDiffArgumentsChanged(object sender, EventArgs e)
@@ -103,17 +113,13 @@ namespace GitUI.CommandsDialogs
             else if(gitStash.Branch == null) // working dir
             {
                 toolStripButton_customMessage.Enabled = true;
-                Task.Factory.StartNew(() => Module.GetAllChangedFiles())
-                    .ContinueWith((task) => LoadGitItemStatuses(task.Result),
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                _asyncLoader.Load(() => Module.GetAllChangedFiles(), LoadGitItemStatuses);
                 Clear.Enabled = false; // disallow Drop  (of current working directory)
                 Apply.Enabled = false; // disallow Apply (of current working directory)
             }
             else
             {
-                Task.Factory.StartNew(() => Module.GetStashDiffFiles(gitStash.Name))
-                    .ContinueWith((task) => LoadGitItemStatuses(task.Result),
-                        TaskScheduler.FromCurrentSynchronizationContext());
+                _asyncLoader.Load(() => Module.GetStashDiffFiles(gitStash.Name), LoadGitItemStatuses);
                 Clear.Enabled = true; // allow Drop
                 Apply.Enabled = true; // allow Apply
 
@@ -151,7 +157,7 @@ namespace GitUI.CommandsDialogs
                         View.ViewGitItem(stashedItem.Name, stashedItem.TreeGuid);
                     else
                         View.ViewText(stashedItem.Name,
-                            GitCommandHelpers.GetSubmoduleText(Module, stashedItem.Name, stashedItem.TreeGuid));
+                            LocalizationHelpers.GetSubmoduleText(Module, stashedItem.Name, stashedItem.TreeGuid));
                 }
                 else
                 {
@@ -163,7 +169,7 @@ namespace GitUI.CommandsDialogs
                         if (patch == null)
                             return String.Empty;
                         if (stashedItem.IsSubmodule)
-                            return GitCommandHelpers.ProcessSubmodulePatch(Module, stashedItem.Name, patch);
+                            return LocalizationHelpers.ProcessSubmodulePatch(Module, stashedItem.Name, patch);
                         return patch.Text;
                     });
                 }
@@ -192,7 +198,18 @@ namespace GitUI.CommandsDialogs
         private void ClearClick(object sender, EventArgs e)
         {
             Cursor.Current = Cursors.WaitCursor;
+            try
+            {
+                OnDropStash();
+            }
+            finally
+            {
+                Cursor.Current = Cursors.Default;
+            }
+        }
 
+        private void OnDropStash()
+        {
             if (AppSettings.StashConfirmDropShow)
             {
                 DialogResult res = PSTaskDialog.cTaskDialog.MessageBox(
@@ -207,36 +224,38 @@ namespace GitUI.CommandsDialogs
                                        PSTaskDialog.eSysIcons.Information,
                                        PSTaskDialog.eSysIcons.Information);
                 if (res == DialogResult.OK)
-                {
-                    UICommands.StashDrop(this, ((GitStash)Stashes.SelectedItem).Name);
-                    Initialize();
-                    Cursor.Current = Cursors.Default;
-                }
+                    DropStash();
 
                 if (PSTaskDialog.cTaskDialog.VerificationChecked)
-                {
                     AppSettings.StashConfirmDropShow = false;
-                }
             }
             else
             {
-                if (Stashes.SelectedItem != null)
-                {
-                    UICommands.StashDrop(this, Stashes.SelectedItem.Name);
-                    Initialize();
-                    Cursor.Current = Cursors.Default;
-                }
-                else if (Stashes.ChildItems.Count > 0)
-                {
-                    foreach (GitStash item in Stashes.ChildItems)
-                    {
-                        UICommands.StashDrop(this, item.Name);
-                    }
-
-                    Initialize();
-                    Cursor.Current = Cursors.Default;
-                }
+                DropStash();
             }
+        }
+
+        private void DropStash()
+        {
+            if (Stashes.SelectedItem != null)
+            {
+                UICommands.StashDrop(this, Stashes.SelectedItem.Name);
+                Initialize();
+            }
+            else if (Stashes.ChildItems.Count > 0)
+            {
+                foreach (GitStash item in Stashes.ChildItems)
+                {
+                    UICommands.StashDrop(this, item.Name);
+                }
+
+                Initialize();
+            }
+        }
+
+        private string GetStashName()
+        {
+            return ((GitStash)Stashes.SelectedItem).Name;
         }
 
         private void ApplyClick(object sender, EventArgs e)
@@ -245,7 +264,7 @@ namespace GitUI.CommandsDialogs
             ApplyStash();
         }
 
-        void Stashed_ApplySelectedItems(object sender, System.EventArgs e)
+        private void Stashed_ApplySelectedItems(object sender, System.EventArgs e)
         {
             ApplyStash();
         }
@@ -309,7 +328,6 @@ namespace GitUI.CommandsDialogs
             splitContainer2_SplitterMoved(null, null);
         }
 
-
         private void toolStripButton_customMessage_Click(object sender, EventArgs e)
         {
             if (toolStripButton_customMessage.Enabled)
@@ -326,7 +344,7 @@ namespace GitUI.CommandsDialogs
                 }
             }
         }
- 
+
         private void StashMessage_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (e.Button != MouseButtons.Left)

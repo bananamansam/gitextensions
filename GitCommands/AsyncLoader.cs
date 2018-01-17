@@ -4,21 +4,42 @@ using System.Threading.Tasks;
 
 namespace GitCommands
 {
-    public class AsyncLoader
+    public class AsyncLoader : IDisposable
     {
-        private readonly TaskScheduler _taskScheduler;
+        private readonly TaskScheduler _continuationTaskScheduler;
         private CancellationTokenSource _cancelledTokenSource;
         public int Delay { get; set; }
 
         public AsyncLoader()
-            : this(TaskScheduler.FromCurrentSynchronizationContext())
+            : this(DefaultContinuationTaskScheduler)
         {
         }
 
-        public AsyncLoader(TaskScheduler taskScheduler)
+        public AsyncLoader(TaskScheduler continuationTaskScheduler)
         {
-            _taskScheduler = taskScheduler;
+            _continuationTaskScheduler = continuationTaskScheduler;
             Delay = 0;
+        }
+
+        private static int _defaultThreadId = -1;
+        private static TaskScheduler _DefaultContinuationTaskScheduler;
+        public static TaskScheduler DefaultContinuationTaskScheduler
+        {
+            get
+            {
+                if (_defaultThreadId == Thread.CurrentThread.ManagedThreadId && _DefaultContinuationTaskScheduler != null)
+                {
+                    return _DefaultContinuationTaskScheduler;
+                }
+
+                return TaskScheduler.FromCurrentSynchronizationContext();
+            }
+
+            set
+            {
+                _defaultThreadId = Thread.CurrentThread.ManagedThreadId;
+                _DefaultContinuationTaskScheduler = value;
+            }
         }
 
         public event EventHandler<AsyncErrorEventArgs> LoadingError = delegate { };
@@ -58,13 +79,15 @@ namespace GitCommands
         public Task Load(Action<CancellationToken> loadContent, Action onLoaded)
         {
             Cancel();
+            if (_cancelledTokenSource != null)
+                _cancelledTokenSource.Dispose();
             _cancelledTokenSource = new CancellationTokenSource();
             var token = _cancelledTokenSource.Token;
             return Task.Factory.StartNew(() =>
                 {
                     if (Delay > 0)
                     {
-                        Thread.Sleep(Delay);
+                        token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(Delay));
                     }
                     if (!token.IsCancellationRequested)
                     {
@@ -92,7 +115,7 @@ namespace GitCommands
                             if (!OnLoadingError(exception))
                                 throw;
                         }
-                    }, CancellationToken.None, TaskContinuationOptions.NotOnCanceled, _taskScheduler);
+                    }, CancellationToken.None, TaskContinuationOptions.NotOnCanceled, _continuationTaskScheduler);
         }
 
         public Task<T> Load<T>(Func<T> loadContent, Action<T> onLoaded)
@@ -103,13 +126,15 @@ namespace GitCommands
         public Task<T> Load<T>(Func<CancellationToken, T> loadContent, Action<T> onLoaded)
         {
             Cancel();
+            if (_cancelledTokenSource != null)
+                _cancelledTokenSource.Dispose();
             _cancelledTokenSource = new CancellationTokenSource();
             var token = _cancelledTokenSource.Token;
             return Task.Factory.StartNew(() => 
                 {
                     if (Delay > 0)
                     {
-                        Thread.Sleep(Delay);
+                        token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(Delay));
                     }
                     if (token.IsCancellationRequested)
                     {
@@ -141,7 +166,7 @@ namespace GitCommands
                         throw;
                     return default(T);
                 }
-            }, CancellationToken.None, TaskContinuationOptions.NotOnCanceled, _taskScheduler);
+            }, CancellationToken.None, TaskContinuationOptions.NotOnCanceled, _continuationTaskScheduler);
         }
 
         public void Cancel()
@@ -155,6 +180,19 @@ namespace GitCommands
             var args = new AsyncErrorEventArgs(exception);
             LoadingError(this, args);
             return args.Handled;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+                if (_cancelledTokenSource != null)
+                    _cancelledTokenSource.Dispose();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 

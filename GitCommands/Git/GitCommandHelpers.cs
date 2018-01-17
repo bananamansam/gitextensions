@@ -122,7 +122,7 @@ namespace GitCommands
             }
         }
 
-        internal static ProcessStartInfo CreateProcessStartInfo(string fileName, string arguments, string workingDirectory, Encoding outputEncoding)
+	    public static ProcessStartInfo CreateProcessStartInfo(string fileName, string arguments, string workingDirectory, Encoding outputEncoding)
         {
             return new ProcessStartInfo
             {
@@ -144,17 +144,16 @@ namespace GitCommands
         {
             SetEnvironmentVariable();
 
-            string quotedCmd = fileName;
-            if (quotedCmd.IndexOf(' ') != -1)
-                quotedCmd = quotedCmd.Quote();
-
             var executionStartTimestamp = DateTime.Now;
 
             var startInfo = CreateProcessStartInfo(fileName, arguments, workingDirectory, outputEncoding);
             var startProcess = Process.Start(startInfo);
-
+            startProcess.EnableRaisingEvents = true;
             startProcess.Exited += (sender, args) =>
             {
+                string quotedCmd = fileName;
+                if (quotedCmd.IndexOf(' ') != -1)
+                    quotedCmd = quotedCmd.Quote();
                 var executionEndTimestamp = DateTime.Now;
                 AppSettings.GitLog.Log(quotedCmd + " " + arguments, executionStartTimestamp, executionEndTimestamp);
             };
@@ -162,7 +161,7 @@ namespace GitCommands
             return startProcess;
         }
 
-        internal static bool UseSsh(string arguments)
+	    public static bool UseSsh(string arguments)
         {
             var x = !Plink() && GetArgumentsRequiresSsh(arguments);
             return x || arguments.Contains("plink");
@@ -476,10 +475,30 @@ namespace GitCommands
 
         public static string CloneCmd(string fromPath, string toPath)
         {
-            return CloneCmd(fromPath, toPath, false, false, string.Empty, null);
+            return CloneCmd(fromPath, toPath, false, false, string.Empty, null, null, false);
         }
 
-        public static string CloneCmd(string fromPath, string toPath, bool central, bool initSubmodules, string branch, int? depth)
+        /// <summary>
+        /// Git Clone.
+        /// </summary>
+        /// <param name="fromPath"></param>
+        /// <param name="toPath"></param>
+        /// <param name="central">Makes a bare repo.</param>
+        /// <param name="initSubmodules"></param>
+        /// <param name="branch">
+        /// <para><c>NULL</c>: do not checkout working copy (--no-checkout).</para>
+        /// <para><c>""</c> (empty string): checkout remote HEAD (branch param omitted, default behavior for clone).</para>
+        /// <para>(a non-empty string): checkout the given branch (--branch smth).</para>
+        /// </param>
+        /// <param name="depth">An int value for --depth param, or <c>NULL</c> to omit the param.</param>
+        /// <param name="isSingleBranch">
+        /// <para><c>True</c>: --single-branch.</para>
+        /// <para><c>False</c>: --no-single-branch.</para>
+        /// <para><c>NULL</c>: don't pass any such param to git.</para>
+        /// </param>
+        /// <param name="lfs">True to use the <c>git lfs clone</c> command instead of <c>git clone</c>.</param>
+        /// <returns></returns>
+        public static string CloneCmd(string fromPath, string toPath, bool central, bool initSubmodules, [CanBeNull] string branch, int? depth, bool? isSingleBranch, bool lfs)
         {
             var from = PathUtil.IsLocalFile(fromPath) ? fromPath.ToPosixPath() : fromPath;
             var to = toPath.ToPosixPath();
@@ -490,13 +509,19 @@ namespace GitCommands
                 options.Add("--recurse-submodules");
             if (depth.HasValue)
                 options.Add("--depth " + depth);
+            if(isSingleBranch.HasValue)
+                options.Add(isSingleBranch.Value ? "--single-branch" : "--no-single-branch");
             options.Add("--progress");
-            if (!string.IsNullOrEmpty(branch))
+            if (branch == null)
+                options.Add("--no-checkout");
+            else if (branch != "")
                 options.Add("--branch " + branch);
             options.Add(string.Format("\"{0}\"", from.Trim()));
             options.Add(string.Format("\"{0}\"", to.Trim()));
 
-            return "clone " + string.Join(" ", options.ToArray());
+            var command = lfs ? "lfs clone " : "clone ";
+
+            return command + string.Join(" ", options.ToArray());
         }
 
         public static string CheckoutCmd(string branchOrRevisionName, LocalChangesAction changesAction)
@@ -539,9 +564,23 @@ namespace GitCommands
 
         public static string BranchCmd(string branchName, string revision, bool checkout)
         {
+            string cmd = null;
             if (checkout)
-                return string.Format("checkout -b \"{0}\" \"{1}\"", branchName.Trim(), revision);
-            return string.Format("branch \"{0}\" \"{1}\"", branchName.Trim(), revision);
+            {
+                cmd = string.Format("checkout -b \"{0}\"", branchName.Trim());
+            }
+            else
+            {
+                cmd = string.Format("branch \"{0}\"", branchName.Trim());
+            }
+            if (revision.IsNullOrWhiteSpace())
+            {
+                return cmd;
+            }
+            else
+            {
+                return cmd + string.Format(" \"{0}\"", revision);
+            }
         }
 
         public static string MergedBranches()
@@ -587,15 +626,14 @@ namespace GitCommands
             }.ToString();
         }
 
-        public static string PushTagCmd(string path, string tag, bool all, bool force = false)
+        public static string PushTagCmd(string path, string tag, bool all,
+            ForcePushOptions force = ForcePushOptions.DoNotForce)
         {
             path = path.ToPosixPath();
 
             tag = tag.Replace(" ", "");
 
-            var sforce = "";
-            if (force)
-                sforce = "-f ";
+            var sforce = GetForcePushArgument(force);
 
             var sprogressOption = "";
             if (VersionInUse.PushCanAskForProgress)
@@ -609,6 +647,16 @@ namespace GitCommands
                 return "push " + options + "\"" + path.Trim() + "\" tag " + tag;
 
             return "";
+        }
+
+        public static string GetForcePushArgument(ForcePushOptions force)
+        {
+            var sforce = "";
+            if (force == ForcePushOptions.Force)
+                sforce = "-f ";
+            else if (force == ForcePushOptions.ForceWithLease)
+                sforce = "--force-with-lease ";
+            return sforce;
         }
 
         public static string StashSaveCmd(bool untracked, bool keepIndex, string message)
@@ -666,7 +714,7 @@ namespace GitCommands
             return "bisect reset";
         }
 
-        public static string RebaseCmd(string branch, bool interactive, bool preserveMerges, bool autosquash)
+        public static string RebaseCmd(string branch, bool interactive, bool preserveMerges, bool autosquash, bool autostash)
         {
             StringBuilder sb = new StringBuilder("rebase ");
 
@@ -681,6 +729,10 @@ namespace GitCommands
                 sb.Append("--preserve-merges ");
             }
 
+            if (autostash)
+            {
+                sb.Append("--autostash ");
+            }
 
             sb.Append('"');
             sb.Append(branch);
@@ -691,7 +743,7 @@ namespace GitCommands
         }
 
 
-        public static string RebaseRangeCmd(string from, string branch, string onto, bool interactive, bool preserveMerges, bool autosquash)
+        public static string RebaseRangeCmd(string from, string branch, string onto, bool interactive, bool preserveMerges, bool autosquash, bool autostash)
         {
             StringBuilder sb = new StringBuilder("rebase ");
 
@@ -704,6 +756,11 @@ namespace GitCommands
             if (preserveMerges)
             {
                 sb.Append("--preserve-merges ");
+            }
+
+            if (autostash)
+            {
+                sb.Append("--autostash ");
             }
 
             sb.Append('"')
@@ -858,7 +915,7 @@ namespace GitCommands
 
                 if (line != null)
                 {
-                    var match = Regex.Match(line, @"diff --git a/(\S+) b/(\S+)");
+                    var match = Regex.Match(line, @"diff --git (?:a|i|c)/(.+)\s(?:b|w|i)/(.+)");
                     if (match.Groups.Count > 1)
                     {
                         status.Name = match.Groups[1].Value;
@@ -866,7 +923,7 @@ namespace GitCommands
                     }
                     else
                     {
-                        match = Regex.Match(line, @"diff --cc (\S+)");
+                        match = Regex.Match(line, @"diff --cc (.+)");
                         if (match.Groups.Count > 1)
                         {
                             status.Name = match.Groups[1].Value;
@@ -912,7 +969,7 @@ namespace GitCommands
         }
 
         /*
-               source: C:\Program Files\msysgit\doc\git\html\git-status.html
+               source: https://git-scm.com/docs/git-status
         */
         public static List<GitItemStatus> GetAllChangedFilesFromString(GitModule module, string statusString, bool fromDiff = false)
         {
@@ -943,7 +1000,7 @@ namespace GitCommands
             }
 
             // Doesn't work with removed submodules
-            IList<string> Submodules = module.GetSubmodulesLocalPathes();
+            IList<string> Submodules = module.GetSubmodulesLocalPaths();
 
             //Split all files on '\0' (WE NEED ALL COMMANDS TO BE RUN WITH -z! THIS IS ALSO IMPORTANT FOR ENCODING ISSUES!)
             var files = trimmedStatus.Split(new char[] { '\0' }, StringSplitOptions.RemoveEmptyEntries);
@@ -1010,6 +1067,26 @@ namespace GitCommands
             return diffFiles;
         }
 
+        public static List<GitItemStatus> GetAssumeUnchangedFilesFromString(GitModule module, string lsString)
+        {
+            List<GitItemStatus> result = new List<GitItemStatus>();
+            string[] lines = lsString.SplitLines();
+            foreach (string line in lines)
+            {
+                char statusCharacter = line[0];
+                if (char.IsUpper(statusCharacter))
+                    continue;
+
+                string fileName = line.Substring(line.IndexOf(' ') + 1);
+                GitItemStatus gitItemStatus = GitItemStatusFromStatusCharacter(fileName, statusCharacter);
+                gitItemStatus.IsStaged = false;
+                gitItemStatus.IsAssumeUnchanged = true;
+                result.Add(gitItemStatus);
+            }
+
+            return result;
+        }
+
         private static GitItemStatus GitItemStatusFromCopyRename(bool fromDiff, string nextfile, string fileName, char x, string status)
         {
             var gitItemStatus = new GitItemStatus();
@@ -1050,162 +1127,6 @@ namespace GitCommands
             return gitItemStatus;
         }
 
-        public static string GetSubmoduleText(GitModule superproject, string name, string hash)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Submodule " + name);
-            sb.AppendLine();
-            GitModule module = superproject.GetSubmodule(name);
-            if (module.IsValidGitWorkingDir())
-            {
-                string error = "";
-                CommitData data = CommitData.GetCommitData(module, hash, ref error);
-                if (data == null)
-                {
-                    sb.AppendLine("Commit hash:\t" + hash);
-                    return sb.ToString();
-                }
-
-                string header = data.GetHeaderPlain();
-                string body = "\n" + data.Body.Trim();
-                sb.AppendLine(header);
-                sb.Append(body);
-            }
-            else
-                sb.AppendLine("Commit hash:\t" + hash);
-            return sb.ToString();
-        }
-
-        public static string ProcessSubmodulePatch(GitModule module, string fileName, PatchApply.Patch patch)
-        {
-            string text = patch != null ? patch.Text : null;
-            var status = GetSubmoduleStatus(text, module, fileName);
-            if (status == null)
-                return "";
-            return ProcessSubmoduleStatus(module, status);
-        }
-
-        public static string ProcessSubmoduleStatus([NotNull] GitModule module, [NotNull] GitSubmoduleStatus status)
-        {
-            if (module == null)
-                throw new ArgumentNullException("module");
-            if (status == null)
-                throw new ArgumentNullException("status");
-            GitModule gitmodule = module.GetSubmodule(status.Name);
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Submodule " + status.Name + " Change");
-
-            sb.AppendLine();
-            sb.AppendLine("From:\t" + (status.OldCommit ?? "null"));
-            CommitData oldCommitData = null;
-            if (gitmodule.IsValidGitWorkingDir())
-            {
-                string error = "";
-                if (status.OldCommit != null)
-                    oldCommitData = CommitData.GetCommitData(gitmodule, status.OldCommit, ref error);
-                if (oldCommitData != null)
-                {
-                    sb.AppendLine("\t\t\t\t\t" + GetRelativeDateString(DateTime.UtcNow, oldCommitData.CommitDate.UtcDateTime) + " (" + GetFullDateString(oldCommitData.CommitDate) + ")");
-                    var delim = new char[] { '\n', '\r' };
-                    var lines = oldCommitData.Body.Trim(delim).Split(new string[] { "\r\n" }, 0);
-                    foreach (var curline in lines)
-                        sb.AppendLine("\t\t" + curline);
-                }
-            }
-            else
-                sb.AppendLine();
-
-            sb.AppendLine();
-            string dirty = !status.IsDirty ? "" : " (dirty)";
-            sb.AppendLine("To:\t\t" + (status.Commit ?? "null") + dirty);
-            CommitData commitData = null;
-            if (gitmodule.IsValidGitWorkingDir())
-            {
-                string error = "";
-                if (status.Commit != null)
-                    commitData = CommitData.GetCommitData(gitmodule, status.Commit, ref error);
-                if (commitData != null)
-                {
-                    sb.AppendLine("\t\t\t\t\t" + GetRelativeDateString(DateTime.UtcNow, commitData.CommitDate.UtcDateTime) + " (" + GetFullDateString(commitData.CommitDate) + ")");
-                    var delim = new char[] { '\n', '\r' };
-                    var lines = commitData.Body.Trim(delim).Split(new string[] { "\r\n" }, 0);
-                    foreach (var curline in lines)
-                        sb.AppendLine("\t\t" + curline);
-                }
-            }
-            else
-                sb.AppendLine();
-
-            sb.AppendLine();
-            var submoduleStatus = gitmodule.CheckSubmoduleStatus(status.Commit, status.OldCommit, commitData, oldCommitData);
-            sb.Append("Type: ");
-            switch (submoduleStatus)
-            {
-                case SubmoduleStatus.NewSubmodule:
-                    sb.AppendLine("New submodule");
-                    break;
-                case SubmoduleStatus.FastForward:
-                    sb.AppendLine("Fast Forward");
-                    break;
-                case SubmoduleStatus.Rewind:
-                    sb.AppendLine("Rewind");
-                    break;
-                case SubmoduleStatus.NewerTime:
-                    sb.AppendLine("Newer commit time");
-                    break;
-                case SubmoduleStatus.OlderTime:
-                    sb.AppendLine("Older commit time");
-                    break;
-                case SubmoduleStatus.SameTime:
-                    sb.AppendLine("Same commit time");
-                    break;
-                default:
-                    sb.AppendLine("Unknown");
-                    break;
-            }
-
-            if (status.AddedCommits != null && status.RemovedCommits != null &&
-                (status.AddedCommits != 0 || status.RemovedCommits != 0))
-            {
-                sb.Append("\nCommits: ");
-
-                if (status.RemovedCommits > 0)
-                {
-                    sb.Append(status.RemovedCommits + " removed");
-
-                    if (status.AddedCommits > 0)
-                        sb.Append(", ");
-                }
-
-                if (status.AddedCommits > 0)
-                    sb.Append(status.AddedCommits + " added");
-
-                sb.AppendLine();
-            }
-
-            if (status.Commit != null && status.OldCommit != null)
-            {
-                if (status.IsDirty)
-                {
-                    string statusText = gitmodule.GetStatusText(false);
-                    if (!String.IsNullOrEmpty(statusText))
-                    {
-                        sb.AppendLine("\nStatus:");
-                        sb.Append(statusText);
-                    }
-                }
-
-                string diffs = gitmodule.GetDiffFilesText(status.OldCommit, status.Commit);
-                if (!String.IsNullOrEmpty(diffs))
-                {
-                    sb.AppendLine("\nDifferences:");
-                    sb.Append(diffs);
-                }
-            }
-
-            return sb.ToString();
-        }
-
         public static string GetRemoteName(string completeName, IEnumerable<string> remotes)
         {
             string trimmedName = completeName.StartsWith("refs/remotes/") ? completeName.Substring(13) : completeName;
@@ -1219,7 +1140,7 @@ namespace GitCommands
             return string.Empty;
         }
 
-        public static string MergeBranchCmd(string branch, bool allowFastForward, bool squash, bool noCommit, string strategy)
+        public static string MergeBranchCmd(string branch, bool allowFastForward, bool squash, bool noCommit, string strategy, bool allowUnrelatedHistories, string message, int? log)
         {
             StringBuilder command = new StringBuilder("merge");
 
@@ -1234,6 +1155,14 @@ namespace GitCommands
                 command.Append(" --squash");
             if (noCommit)
                 command.Append(" --no-commit");
+            if (allowUnrelatedHistories)
+                command.Append(" --allow-unrelated-histories");
+
+            if (!string.IsNullOrEmpty(message))
+                command.AppendFormat(" -m {0}", message.Quote());
+
+            if (log.HasValue)
+                command.AppendFormat(" --log={0}", log.Value);
 
             command.Append(" ");
             command.Append(branch);
@@ -1246,64 +1175,6 @@ namespace GitCommands
                 return fileName.Substring(fileName.LastIndexOf('.') + 1);
 
             return null;
-        }
-
-        private static DateTime RoundDateTime(DateTime dateTime)
-        {
-            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, dateTime.Second);
-        }
-
-        /// <summary>
-        /// Takes a date/time which and determines a friendly string for time from now to be displayed for the relative time from the date.
-        /// It is important to note that times are compared using the current timezone, so the date that is passed in should be converted
-        /// to the local timezone before passing it in.
-        /// </summary>
-        /// <param name="originDate">Current date.</param>
-        /// <param name="previousDate">The date to get relative time string for.</param>
-        /// <param name="displayWeeks">Indicates whether to display weeks.</param>
-        /// <returns>The human readable string for relative date.</returns>
-        /// <see cref="http://stackoverflow.com/questions/11/how-do-i-calculate-relative-time"/>
-        public static string GetRelativeDateString(DateTime originDate, DateTime previousDate, bool displayWeeks = true)
-        {
-            var ts = new TimeSpan(RoundDateTime(originDate).Ticks - RoundDateTime(previousDate).Ticks);
-            double delta = Math.Abs(ts.TotalSeconds);
-
-            if (delta < 60)
-            {
-                return Strings.GetNSecondsAgoText(ts.Seconds);
-            }
-            if (delta < 45 * 60)
-            {
-                return Strings.GetNMinutesAgoText(ts.Minutes);
-            }
-            if (delta < 24 * 60 * 60)
-            {
-                int hours = delta < 60 * 60 ? Math.Sign(ts.Minutes) * 1 : ts.Hours;
-                return Strings.GetNHoursAgoText(hours);
-            }
-            // 30.417 = 365 days / 12 months - note that the if statement only bothers with 30 days for "1 month ago" because ts.Days is int
-            if (delta < (displayWeeks ? 7 : 30) * 24 * 60 * 60)
-            {
-                return Strings.GetNDaysAgoText(ts.Days);
-            }
-            if (displayWeeks && delta < 30 * 24 * 60 * 60)
-            {
-                int weeks = Convert.ToInt32(ts.Days / 7.0);
-                return Strings.GetNWeeksAgoText(weeks);
-            }
-            if (delta < 365 * 24 * 60 * 60)
-            {
-                int months = Convert.ToInt32(ts.Days / 30.0);
-                return Strings.GetNMonthsAgoText(months);
-            }
-            int years = Convert.ToInt32(ts.Days / 365.0);
-            return Strings.GetNYearsAgoText(years);
-        }
-
-        public static string GetFullDateString(DateTimeOffset datetime)
-        {
-            // previous format "ddd MMM dd HH':'mm':'ss yyyy"
-            return datetime.LocalDateTime.ToString("G");
         }
 
         // look into patch file and try to figure out if it's a raw diff (i.e from git diff -p)
@@ -1325,7 +1196,7 @@ namespace GitCommands
             }
         }
 
-        // returns " --find-renames=..." according to app settings 
+        // returns " --find-renames=..." according to app settings
         public static string FindRenamesOpt()
         {
             string result = " --find-renames";
@@ -1336,7 +1207,7 @@ namespace GitCommands
             return result;
         }
 
-        // returns " --find-renames=... --find-copies=..." according to app settings 
+        // returns " --find-renames=... --find-copies=..." according to app settings
         public static string FindRenamesAndCopiesOpts()
         {
             string findCopies = " --find-copies";

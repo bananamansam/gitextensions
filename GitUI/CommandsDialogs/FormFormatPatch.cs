@@ -50,10 +50,11 @@ namespace GitUI.CommandsDialogs
 
         private void Browse_Click(object sender, EventArgs e)
         {
-            using (var dialog = new FolderBrowserDialog())
+            var userSelectedPath = OsShellUtil.PickFolder(this);
+
+            if (userSelectedPath != null)
             {
-                if (dialog.ShowDialog(this) == DialogResult.OK)
-                    OutputPath.Text = dialog.SelectedPath;
+                OutputPath.Text = userSelectedPath;
             }
         }
 
@@ -104,7 +105,7 @@ namespace GitUI.CommandsDialogs
 
             if (!SaveToDir.Checked)
             {
-                savePatchesToDir = Path.Combine(Module.GetGitDirectory(), "PatchesToMail");
+                savePatchesToDir = Path.Combine(Module.WorkingDirGitDir, "PatchesToMail");
                 if (Directory.Exists(savePatchesToDir))
                 {
                     foreach (string file in Directory.GetFiles(savePatchesToDir, "*.patch"))
@@ -178,6 +179,7 @@ namespace GitUI.CommandsDialogs
             Close();
         }
 
+#pragma warning disable 618 // Mono marked SmtpClient obsolete
         private bool SendMail(string dir)
         {
             try
@@ -220,6 +222,7 @@ namespace GitUI.CommandsDialogs
             }
             return true;
         }
+#pragma warning restore 618 // Mono marked SmtpClient obsolete
 
         private void SaveToDir_CheckedChanged(object sender, EventArgs e)
         {

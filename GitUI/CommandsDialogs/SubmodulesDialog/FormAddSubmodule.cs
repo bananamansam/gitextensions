@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Windows.Forms;
 using GitCommands;
 using GitCommands.Repository;
+using GitUIPluginInterfaces;
 using ResourceManager;
 
 namespace GitUI.CommandsDialogs.SubmodulesDialog
@@ -22,11 +22,11 @@ namespace GitUI.CommandsDialogs.SubmodulesDialog
 
         private void BrowseClick(object sender, EventArgs e)
         {
-            using (var browseDialog = new FolderBrowserDialog { SelectedPath = Directory.Text })
-            {
+            var userSelectedPath = OsShellUtil.PickFolder(this, Directory.Text);
 
-                if (browseDialog.ShowDialog(this) == DialogResult.OK)
-                    Directory.Text = browseDialog.SelectedPath;
+            if (userSelectedPath != null)
+            {
+                Directory.Text = userSelectedPath;
             }
         }
 
@@ -63,23 +63,23 @@ namespace GitUI.CommandsDialogs.SubmodulesDialog
         {
             GitModule module = new GitModule(Directory.Text);
             Branch.DisplayMember = "Name";
-            IList<GitRef> heads;
+            IList<IGitRef> heads;
             if (module.IsValidGitWorkingDir())
                 heads = module.GetRefs(false);
             else
-                heads = new List<GitRef>();
+                heads = new List<IGitRef>();
             heads.Insert(0, GitRef.NoHead(module));
             Branch.DataSource = heads;
         }
 
         private void DirectoryTextUpdate(object sender, EventArgs e)
         {
-            var path = PathUtil.GetDirectoryName(Directory.Text);
+            string path = PathUtil.GetRepositoryName(Directory.Text);
 
-            if (path.EndsWith(".git"))
-                path = path.Replace(".git", "");
-
-            LocalPath.Text = PathUtil.GetFileName(path);
+            if (path != "")
+            {
+                LocalPath.Text = path;
+            }
         }
     }
 }

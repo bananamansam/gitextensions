@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using GitCommands.Repository;
 using GitUI.Properties;
 using GitCommands;
+using ResourceManager;
 
 namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
 {
@@ -16,6 +17,9 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
         {
             InitializeComponent();
             Translate();
+            this.flowLayoutPanel2.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            this.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            this.Icon.Width = this.Icon.Height;
         }
 
         public DashboardItem(Repository repository)
@@ -67,7 +71,11 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
                 _NO_TRANSLATE_Title.Text = Path;
 
             bool hasDescription = !string.IsNullOrEmpty(text);
-            _NO_TRANSLATE_Description.Visible = hasDescription;
+            if (!hasDescription)
+            {
+                _NO_TRANSLATE_Description.AutoSize = false;
+                _NO_TRANSLATE_Description.Size = Size.Empty;
+            }
             _NO_TRANSLATE_Description.Text = text;
 
             if (icon != null)
@@ -128,12 +136,16 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
 
         private void DashboardItem_MouseEnter(object sender, EventArgs e)
         {
-            BackColor = SystemColors.ControlLight;
+            this.BackColor = SystemColors.ControlLight;
         }
 
         private void DashboardItem_MouseLeave(object sender, EventArgs e)
         {
-            BackColor = SystemColors.Control;
+            if ((sender == Icon || sender == _NO_TRANSLATE_Title) &&
+                this.ClientRectangle.Contains(this.PointToClient(Control.MousePosition)))
+                return;
+
+            this.BackColor = SystemColors.Control;
         }
 
         void DashboardItem_VisibleChanged(object sender, System.EventArgs e)
@@ -163,6 +175,23 @@ namespace GitUI.CommandsDialogs.BrowseDialog.DashboardControl
         {
             if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Space)
                 OnClick(e);
+        }
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                CancelBranchNameLoad();
+                if (_branchNameLoader != null)
+                    _branchNameLoader.Dispose();
+                if (components != null)
+                    components.Dispose();
+            }
+            base.Dispose(disposing);
         }
     }
 }

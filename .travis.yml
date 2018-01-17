@@ -1,17 +1,14 @@
-language: c
-
+language: csharp
+solution: GitExtensionsMono.sln
 os: linux
 
-before_install:
-  - sudo bash -c "echo deb http://badgerports.org precise main >> /etc/apt/sources.list"
-  - sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E1FAD0C
-  - sudo apt-get update -qq
-  - sudo apt-get install mono-complete -qq -y
-  - sudo mono --version
-
 install:
-  - mozroots --import --sync --quiet
-  - mono --runtime=v4.0 ./.nuget/NuGet.exe restore ./GitExtensionsMono.sln
-
+  - nuget restore GitExtensionsMono.sln
+  - nuget install NUnit.Runners -Version 3.7.0 -OutputDirectory testrunner
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
 script:
-  - xbuild /p:TargetFrameworkProfile="" ./GitExtensionsMono.sln
+  - msbuild /p:Configuration=Debug GitExtensionsMono.sln
+  - mono ./testrunner/NUnit.ConsoleRunner.3.7.0/tools/nunit3-console.exe GitExtensionsMono.sln

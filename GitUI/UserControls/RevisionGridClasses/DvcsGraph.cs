@@ -16,7 +16,15 @@ namespace GitUI.RevisionGridClasses
     {
         #region Delegates
 
-        public delegate void LoadingEventHandler(bool isLoading);
+        public class LoadingEventArgs : EventArgs
+        {
+            public LoadingEventArgs(bool isLoading)
+            {
+                IsLoading = isLoading;
+            }
+
+            public bool IsLoading { get; private set; }
+        }
 
         #endregion
 
@@ -44,11 +52,10 @@ namespace GitUI.RevisionGridClasses
 
         #endregion
 
-        private int _nodeDimension = 8;
+        private int _nodeDimension = 10;
         private int _laneWidth = 13;
         private int _laneLineWidth = 2;
         private const int MaxLanes = 40;
-        private Brush _selectionBrush;
 
         private Pen _whiteBorderPen;
         private Pen _blackBorderPen;
@@ -89,13 +96,12 @@ namespace GitUI.RevisionGridClasses
         private int _visibleBottom;
         private int _visibleTop;
 
-        public void SetDimensions(int nodeDimension, int laneWidth, int laneLineWidth, int rowHeight, Brush selectionBrush)
+        public void SetDimensions(int nodeDimension, int laneWidth, int laneLineWidth, int rowHeight)
         {
             RowTemplate.Height = rowHeight;
             _nodeDimension = nodeDimension;
             _laneWidth = laneWidth;
             _laneLineWidth = laneLineWidth;
-            this._selectionBrush = selectionBrush;
 
             dataGrid_Resize(null, null);
         }
@@ -122,11 +128,10 @@ namespace GitUI.RevisionGridClasses
             RowHeadersDefaultCellStyle.Font = SystemFonts.DefaultFont;
             RowTemplate.DefaultCellStyle.Font = SystemFonts.DefaultFont;
 
-            _whiteBorderPen = new Pen(Brushes.White, _laneLineWidth + 2);
+            _whiteBorderPen = new Pen(Brushes.White, _laneLineWidth);
             _blackBorderPen = new Pen(Brushes.Black, _laneLineWidth + 1);
 
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
-            CellPainting += dataGrid_CellPainting;
             ColumnWidthChanged += dataGrid_ColumnWidthChanged;
             Scroll += dataGrid_Scroll;
             _graphData.Updated += graphData_Updated;
@@ -173,12 +178,15 @@ namespace GitUI.RevisionGridClasses
         /// </summary>
         internal DataGridViewColumn DateColumn { get { return Columns[3]; } }
 
+        internal DataGridViewColumn IdColumn { get { return Columns[4]; } }
+
         public void ShowAuthor(bool show)
         {
             this.AuthorColumn.Visible = show;
             this.DateColumn.Visible = show;
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "It looks like such lock was made intentionally but it is better to rewrite this")]
         [DefaultValue(FilterType.None)]
         [Category("Behavior")]
         public FilterType FilterMode
@@ -231,6 +239,7 @@ namespace GitUI.RevisionGridClasses
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public string[] SelectedIds
@@ -251,6 +260,11 @@ namespace GitUI.RevisionGridClasses
             }
             set
             {
+                string[] currentSelection = SelectedIds;
+                if (value != null && currentSelection != null && value.SequenceEqual(currentSelection))
+                    return;
+
+                lock (_backgroundEvent)
                 lock (_graphData)
                 {
                     ClearSelection();
@@ -258,21 +272,18 @@ namespace GitUI.RevisionGridClasses
                     if (value == null)
                         return;
 
-                    ClearSelection();
-                    CurrentCell = null;
-
                     foreach (string rowItem in value)
                     {
-                        int row = FindRow(rowItem);
-                        if (row >= 0 && Rows.Count > row)
+                        int? row = TryGetRevisionIndex(rowItem);
+                        if (row.HasValue && row.Value >= 0 && Rows.Count > row.Value)
                         {
-                            Rows[row].Selected = true;
+                            Rows[row.Value].Selected = true;
                             if (CurrentCell == null)
                             {
                                 // Set the current cell to the first item. We use cell
                                 // 1 because cell 0 could be hidden if they've chosen to
                                 // not see the graph
-                                CurrentCell = Rows[row].Cells[1];
+                                CurrentCell = Rows[row.Value].Cells[1];
                             }
                         }
                     }
@@ -280,6 +291,7 @@ namespace GitUI.RevisionGridClasses
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "It looks like such lock was made intentionally but it is better to rewrite this")]
         protected override void Dispose(bool disposing)
         {
             lock (_backgroundEvent)
@@ -312,7 +324,7 @@ namespace GitUI.RevisionGridClasses
 
         [Description("Loading Handler. NOTE: This will often happen on a background thread so UI operations may not be safe!")]
         [Category("Behavior")]
-        public event LoadingEventHandler Loading;
+        public event EventHandler<LoadingEventArgs> Loading;
 
         public void ShowRevisionGraph()
         {
@@ -348,6 +360,7 @@ namespace GitUI.RevisionGridClasses
             UpdateData();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "It looks like such lock was made intentionally but it is better to rewrite this")]
         public void Clear()
         {
             lock (_backgroundThread)
@@ -462,6 +475,7 @@ namespace GitUI.RevisionGridClasses
             Invalidate(true);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "It looks like such lock was made intentionally but it is better to rewrite this")]
         private void SetRowCount(int count)
         {
             if (InvokeRequired)
@@ -513,7 +527,7 @@ namespace GitUI.RevisionGridClasses
                 });
         }
 
-        private void dataGrid_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
+        public void dataGrid_CellPainting(object sender, DataGridViewCellPaintingEventArgs e)
         {
             if (e.RowIndex < 0)
                 return;
@@ -525,10 +539,6 @@ namespace GitUI.RevisionGridClasses
 
             if ((e.State & DataGridViewElementStates.Visible) == 0 || e.ColumnIndex != 0)
                 return;
-
-            var brush = (e.State & DataGridViewElementStates.Selected) == DataGridViewElementStates.Selected
-                            ? _selectionBrush : Brushes.White;
-            e.Graphics.FillRectangle(brush, e.CellBounds);
 
             Rectangle srcRect = DrawGraph(e.RowIndex);
             if (!srcRect.IsEmpty)
@@ -556,6 +566,7 @@ namespace GitUI.RevisionGridClasses
             UpdateColumnWidth();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "It looks like such lock was made intentionally but it is better to rewrite this")]
         private void BackgroundThreadEntry()
         {
             while (_shouldRun)
@@ -592,6 +603,7 @@ namespace GitUI.RevisionGridClasses
             }
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2002:DoNotLockOnObjectsWithWeakIdentity", Justification = "It looks like such lock was made intentionally but it is better to rewrite this")]
         private void UpdateGraph(int curCount, int scrollTo)
         {
             while (curCount < scrollTo)
@@ -610,7 +622,7 @@ namespace GitUI.RevisionGridClasses
                     }
 
                     // Update the row (if needed)
-                    if (curCount < _visibleBottom)
+                    if (curCount == Math.Min(scrollTo, _visibleBottom) - 1)
                     {
                         this.InvokeAsync(o => UpdateRow((int)o), curCount);
                     }
@@ -639,7 +651,7 @@ namespace GitUI.RevisionGridClasses
                 //rows that the user is viewing
                 if (Loading != null && _graphData.Count > RowCount)// && graphData.Count != RowCount)
                 {
-                    Loading(true);
+                    Loading(this, new LoadingEventArgs(true));
                 }
             }
             else
@@ -648,7 +660,7 @@ namespace GitUI.RevisionGridClasses
                 //animation that is shown. (the event Loading(bool) triggers this!)
                 if (Loading != null)
                 {
-                    Loading(false);
+                    Loading(this, new LoadingEventArgs(false));
                 }
             }
 
@@ -714,7 +726,14 @@ namespace GitUI.RevisionGridClasses
                         }
                     }
 
-                    laneCount = Math.Min(Math.Max(laneCount, width), MaxLanes);
+                    // When 'git log --first-parent' filtration is enabled and when only current 
+                    // branch needed to be rendered (and this filter actually works),
+                    // it is much more readable to limit max lanes to 1.
+                    int maxLanes = 
+                        (AppSettings.ShowFirstParent && 
+                        AppSettings.ShowCurrentBranchOnly && 
+                        AppSettings.BranchFilterEnabled) ? 1: MaxLanes;
+                    laneCount = Math.Min(Math.Max(laneCount, width), maxLanes);
                 }
                 if (GraphColumn.Width != _laneWidth*laneCount && _laneWidth*laneCount > GraphColumn.MinimumWidth)
                     GraphColumn.Width = _laneWidth*laneCount;
@@ -1242,6 +1261,21 @@ namespace GitUI.RevisionGridClasses
             return null;
         }
 
+        public int? TryGetRevisionIndex(string guid)
+        {
+            Node node;
+
+            if (guid != null)
+            {
+                if (_graphData.Nodes.TryGetValue(guid, out node))
+                {
+                    return node.Index;
+                }
+            }
+
+            return null;
+        }
+
         public List<string> GetRevisionChildren(string guid)
         {
             Node node;
@@ -1261,8 +1295,6 @@ namespace GitUI.RevisionGridClasses
 
             return childrenIds;
         }
-
-
 
         private void dataGrid_Resize(object sender, EventArgs e)
         {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using GitCommands;
 using GitUI.HelperDialogs;
@@ -59,16 +60,18 @@ namespace GitUI.CommandsDialogs
             var selectedHead = Module.GetSelectedBranch();
             Currentbranch.Text = selectedHead;
 
+            var refs = Module.GetRefs(true, true).OfType<GitRef>().ToList();
+            Branches.DataSource = refs;
             Branches.DisplayMember = "Name";
-            Branches.DataSource = Module.GetRefs(true, true);
 
             if (_defaultBranch != null)
                 Branches.Text = _defaultBranch;
 
             Branches.Select();
 
+            refs = Module.GetRefs(false, true).OfType<GitRef>().ToList();
+            cboTo.DataSource = refs;
             cboTo.DisplayMember = "Name";
-            cboTo.DataSource = Module.GetRefs(false, true);
 
             if (_defaultToBranch != null)
                 cboTo.Text = _defaultToBranch;
@@ -81,6 +84,8 @@ namespace GitUI.CommandsDialogs
             // Honor the rebase.autosquash configuration.
             var autosquashSetting = Module.GetEffectiveSetting("rebase.autosquash");
             chkAutosquash.Checked = "true" == autosquashSetting.Trim().ToLower();
+
+            chkStash.Checked = AppSettings.RebaseAutoStash;
         }
 
         private void EnableButtons()
@@ -92,6 +97,7 @@ namespace GitUI.CommandsDialogs
 
                 Branches.Enabled = false;
                 Ok.Enabled = false;
+                chkStash.Enabled = false;
 
                 AddFiles.Enabled = true;
                 Resolved.Enabled = !Module.InTheMiddleOfConflictedMerge();
@@ -108,6 +114,7 @@ namespace GitUI.CommandsDialogs
                 Mergetool.Enabled = false;
                 Skip.Enabled = false;
                 Abort.Enabled = false;
+                chkStash.Enabled = Module.IsDirtyDir(); ;
             }
 
             SolveMergeconflicts.Visible = Module.InTheMiddleOfConflictedMerge();
@@ -197,16 +204,20 @@ namespace GitUI.CommandsDialogs
                 return;
             }
 
+            AppSettings.RebaseAutoStash = chkStash.Checked;
+
             string rebaseCmd;
             if (chkSpecificRange.Checked && !String.IsNullOrWhiteSpace(txtFrom.Text) && !String.IsNullOrWhiteSpace(cboTo.Text))
             {
                 rebaseCmd = GitCommandHelpers.RebaseRangeCmd(txtFrom.Text, cboTo.Text, Branches.Text,
                                                              chkInteractive.Checked, chkPreserveMerges.Checked,
-                                                             chkAutosquash.Checked);
+                                                             chkAutosquash.Checked, chkStash.Checked);
             }
             else
             {
-                rebaseCmd = GitCommandHelpers.RebaseCmd(Branches.Text, chkInteractive.Checked, chkPreserveMerges.Checked, chkAutosquash.Checked);
+                rebaseCmd = GitCommandHelpers.RebaseCmd(Branches.Text, chkInteractive.Checked, 
+                                                        chkPreserveMerges.Checked, chkAutosquash.Checked,
+                                                        chkStash.Checked);
             }
 
             var dialogResult = FormProcess.ReadDialog(this, rebaseCmd);
@@ -225,11 +236,6 @@ namespace GitUI.CommandsDialogs
         private void SolveMergeconflictsClick(object sender, EventArgs e)
         {
             MergetoolClick(sender, e);
-        }
-
-        private void chkPreserveMerges_CheckedChanged(object sender, EventArgs e)
-        {
-
         }
 
         private void ShowOptions_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

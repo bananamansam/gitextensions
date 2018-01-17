@@ -63,33 +63,36 @@ namespace GitUI.CommandsDialogs.SettingsDialog
                 gitpath = possibleNewPath.Trim();
             }
 
-            gitpath = gitpath.Replace(@"\cmd\git.exe", @"\bin\")
-                .Replace(@"\cmd\git.cmd", @"\bin\")
-                .Replace(@"\bin\git.exe", @"\bin\");
-
-            if (Directory.Exists(gitpath))
+            foreach (var toolsPath in new[] { @"bin\", @"usr\bin\" })
             {
-                if (File.Exists(gitpath + "sh.exe") || File.Exists(gitpath + "sh"))
+                gitpath = gitpath.Replace(@"\cmd\git.exe", @"\" + toolsPath)
+                    .Replace(@"\cmd\git.cmd", @"\" + toolsPath)
+                    .Replace(@"\bin\git.exe", @"\" + toolsPath);
+
+                if (Directory.Exists(gitpath))
                 {
-                    AppSettings.GitBinDir = gitpath;
+                    if (File.Exists(gitpath + "sh.exe") || File.Exists(gitpath + "sh"))
+                    {
+                        AppSettings.GitBinDir = gitpath;
+                        return true;
+                    }
+                }
+
+                if (CheckIfFileIsInPath("sh.exe") || CheckIfFileIsInPath("sh"))
+                {
+                    AppSettings.GitBinDir = "";
                     return true;
                 }
-            }
 
-            if (CheckIfFileIsInPath("sh.exe") || CheckIfFileIsInPath("sh"))
-            {
-                AppSettings.GitBinDir = "";
-                return true;
-            }
-
-            foreach (var path in GetGitLocations())
-            {
-                if (Directory.Exists(path + @"bin\"))
+                foreach (var path in GetGitLocations())
                 {
-                    if (File.Exists(path + @"bin\sh.exe") || File.Exists(path + @"bin\sh"))
+                    if (Directory.Exists(path + toolsPath))
                     {
-                        AppSettings.GitBinDir = path + @"bin\";
-                        return true;
+                        if (File.Exists(path + toolsPath + "sh.exe") || File.Exists(path + toolsPath + "sh"))
+                        {
+                            AppSettings.GitBinDir = path + toolsPath;
+                            return true;
+                        }
                     }
                 }
             }
@@ -117,6 +120,8 @@ namespace GitUI.CommandsDialogs.SettingsDialog
             yield return @"C:\msysgit\";
             // cygwin has old git version on windows and bash has a lot of bugs
             yield return @"C:\cygwin\";
+            yield return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Programs", "Git\\");
         }
 
         private IEnumerable<string> GetWindowsCommandLocations(string possibleNewPath = null)
@@ -177,9 +182,8 @@ namespace GitUI.CommandsDialogs.SettingsDialog
 
         public static bool CheckIfFileIsInPath(string fileName)
         {
-            string path = Environment.GetEnvironmentVariable("PATH");
-
-            return path.Split(';').Any(dir => File.Exists(dir + " \\" + fileName) || File.Exists(Path.Combine(dir, fileName)));
+            string foo;
+            return PathUtil.TryFindFullPath(fileName, out foo);
         }
 
         public bool SolveMergeToolForKDiff()

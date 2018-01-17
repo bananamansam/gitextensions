@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Windows.Forms;
 using GitCommands;
+using ResourceManager;
 
 namespace GitUI.Help
 {
@@ -57,7 +58,7 @@ namespace GitUI.Help
                      */
 
                     SaveIsExpandedValueInSettings(value);
-                }                
+                }
             }
         }
 
@@ -190,7 +191,7 @@ namespace GitUI.Help
             var form = TopLevelControl as Form;
             var s = new System.Drawing.Size();
             var ms = new System.Drawing.Size();
-            if (TopLevelControl != null)
+            if (form != null)
             {
                 s = form.Size;
                 s.Width -= Size.Width;
@@ -203,7 +204,7 @@ namespace GitUI.Help
             }
             Size = size;
             MinimumSize = size;
-            if (TopLevelControl != null)
+            if (form != null)
             {
                 s.Width += Size.Width;
                 form.Size = s;

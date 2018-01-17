@@ -16,17 +16,12 @@ namespace GitCommands
 
         public void Dispose()
         {
-            DisposeImpl();
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        protected virtual void DisposeImpl()
+        protected virtual void Dispose(bool disposing)
         {
-        }
-
-        ~SettingsCache()
-        {
-            DisposeImpl();
         }
 
         public void LockedAction(Action action)
@@ -51,15 +46,15 @@ namespace GitCommands
         protected abstract void SetValueImpl(string key, string value);        
         protected abstract string GetValueImpl(string key);
         protected abstract bool NeedRefresh();
-
-        protected virtual void ClearImpl()
-        {
-            ByNameMap.Clear();
-        }
+        protected abstract void ClearImpl();
 
         private void Clear()
         {
-            LockedAction(ClearImpl);
+            LockedAction(() =>
+            {
+                ClearImpl();
+                ByNameMap.Clear();
+            });
         }
 
         public void Save()
@@ -161,7 +156,14 @@ namespace GitCommands
             LockedAction(() =>
             {
                 SetValue(name, s);
-                ByNameMap[name] = value;
+                if (s == null)
+                {
+                    ByNameMap[name] = null;
+                }
+                else
+                {
+                    ByNameMap[name] = value;
+                }
             });
         }
 

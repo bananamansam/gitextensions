@@ -35,7 +35,7 @@ namespace Github3
                     if (repo.Organization != null)
                         return null;
 
-                    repo = Github3.github.getRepository(Owner, Name);
+                    repo = Github3Plugin.github.getRepository(Owner, Name);
                 }
                 return repo.Parent == null ? null : repo.Parent.GitUrl;
             }
@@ -53,7 +53,7 @@ namespace Github3
                     if (repo.Organization != null)
                         return null;
 
-                    repo = Github3.github.getRepository(Owner, Name);
+                    repo = Github3Plugin.github.getRepository(Owner, Name);
                 }
 
                 return repo.Parent == null ? null : repo.Parent.Owner.Login;
@@ -74,9 +74,18 @@ namespace Github3
 
         public List<IPullRequestInformation> GetPullRequests()
         {
-            if (repo == null)
-                return new List<IPullRequestInformation>();
-            return repo.GetPullRequests().Select(pullrequest => (IPullRequestInformation)new GithubPullRequest(pullrequest)).ToList();
+            if (repo != null)
+            {
+                var pullRequests = repo.GetPullRequests();
+                if (pullRequests != null)
+                {
+                    return pullRequests
+                        .Select(pr => (IPullRequestInformation)new GithubPullRequest(pr))
+                        .ToList();
+                }
+            }
+
+            return new List<IPullRequestInformation>();
         }
 
         public int CreatePullRequest(string myBranch, string remoteBranch, string title, string body)

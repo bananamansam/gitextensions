@@ -11,10 +11,9 @@ using ResourceManager;
 
 namespace Gerrit
 {
-    public class GerritPlugin : GitPluginBase, IGitPluginForRepository, ITranslate
+    public class GerritPlugin : GitPluginBase, IGitPluginForRepository
     {
         #region Translation
-        private readonly TranslationString _pluginDescription = new TranslationString("Gerrit Code Review");
         private readonly TranslationString _editGitReview = new TranslationString("Edit .gitreview");
         private readonly TranslationString _downloadGerritChange = new TranslationString("Download Gerrit Change");
         private readonly TranslationString _publishGerritChange = new TranslationString("Publish Gerrit Change");
@@ -33,16 +32,12 @@ namespace Gerrit
         private Form _mainForm;
         private IGitUICommands _gitUiCommands;
         private ToolStripButton _installCommitMsgMenuItem;
-        
+
         // public only because of FormTranslate
         public GerritPlugin()
         {
-            Translator.Translate(this, GitCommands.AppSettings.CurrentTranslation);
-        }
-
-        public override string Description
-        {
-            get { return _pluginDescription.Text; }
+            SetNameAndDescription("Gerrit Code Review");
+            Translate();
         }
 
         public override void Register(IGitUICommands gitUiCommands)
@@ -57,16 +52,6 @@ namespace Gerrit
             gitUiCommands.PostBrowseInitialize -= gitUiCommands_PostBrowseInitialize;
             gitUiCommands.PostRegisterPlugin -= gitUiCommands_PostRegisterPlugin;
             _gitUiCommands = null;
-        }
-
-        public virtual void AddTranslationItems(ITranslation translation)
-        {
-            TranslationUtils.AddTranslationItemsFromFields(GetType().Name, this, translation);
-        }
-
-        public virtual void TranslateItems(ITranslation translation)
-        {
-            TranslationUtils.TranslateItemsFromFields(GetType().Name, this, translation);
         }
 
         void gitUiCommands_PostRegisterPlugin(object sender, GitUIBaseEventArgs e)
@@ -99,20 +84,20 @@ namespace Gerrit
 
             _installCommitMsgMenuItem.Visible =
                 showGerritItems &&
-                !HaveValidCommitMsgHook(e.GitModule.GetGitDirectory());
+                !HaveValidCommitMsgHook(e.GitModule);
         }
 
-        private bool HaveValidCommitMsgHook(string gitDirectory)
+        private bool HaveValidCommitMsgHook(IGitModule gitModule)
         {
-            return HaveValidCommitMsgHook(gitDirectory, false);
+            return HaveValidCommitMsgHook(gitModule, false);
         }
 
-        private bool HaveValidCommitMsgHook([NotNull] string gitDirectory, bool force)
+        private bool HaveValidCommitMsgHook([NotNull] IGitModule gitModule, bool force)
         {
-            if (gitDirectory == null)
+            if (gitModule == null)
                 throw new ArgumentNullException("gitDirectory");
 
-            string path = Path.Combine(gitDirectory, "hooks", "commit-msg");
+            string path = Path.Combine(gitModule.ResolveGitInternalPath("hooks"), "commit-msg");
 
             if (!File.Exists(path))
                 return false;
@@ -295,8 +280,7 @@ namespace Gerrit
                 return;
 
             string path = Path.Combine(
-                _gitUiCommands.GitModule.GetGitDirectory(),
-                "hooks",
+                _gitUiCommands.GitModule.ResolveGitInternalPath("hooks"),
                 "commit-msg"
             );
 
@@ -327,7 +311,7 @@ namespace Gerrit
 
                 // Update the cache.
 
-                HaveValidCommitMsgHook(_gitUiCommands.GitModule.GetGitDirectory(), true);
+                HaveValidCommitMsgHook(_gitUiCommands.GitModule, true);
             }
         }
 
@@ -346,7 +330,7 @@ namespace Gerrit
             );
 
             // The first line of the output contains the file we're receiving
-            // in a format like "C0755 4248 commit-msg". 
+            // in a format like "C0755 4248 commit-msg".
 
             if (String.IsNullOrEmpty(content))
                 return null;

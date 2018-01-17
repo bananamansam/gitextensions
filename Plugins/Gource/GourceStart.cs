@@ -7,15 +7,16 @@ using System.Windows.Forms;
 
 namespace Gource
 {
-    public partial class GourceStart : Form
+    public partial class GourceStart : ResourceManager.GitExtensionsFormBase
     {
         public GourceStart(string pathToGource, GitUIBaseEventArgs gitUIArgs, string gourceArguments)
         {
             InitializeComponent();
+            Translate();
             PathToGource = pathToGource;
             GitUIArgs = gitUIArgs;
-            GitWorkingDir = gitUIArgs.GitModule.WorkingDir;
-            AvatarsDir = gitUIArgs.GitModule.GravatarCacheDir;
+            GitWorkingDir = gitUIArgs != null ? gitUIArgs.GitModule.WorkingDir : null;
+            AvatarsDir = gitUIArgs != null ? gitUIArgs.GitModule.GravatarCacheDir : null;
             GourceArguments = gourceArguments;
 
             WorkingDir.Text = GitWorkingDir;
@@ -54,7 +55,7 @@ namespace Gource
         {
             if (!File.Exists(GourcePath.Text))
             {
-                MessageBox.Show(this, "Cannot find \"gource\".\nPlease download \"gource\" and set the correct path.");
+                MessageBox.Show(this, "Cannot find Gource.\nPlease download Gource and set the correct path.");
                 return;
             }
 
@@ -130,6 +131,11 @@ namespace Gource
         private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             Process.Start(@"https://github.com/acaudwell/Gource/");
+        }
+
+        private void linkLabel2_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start(@"https://github.com/acaudwell/Gource/blob/master/README");
         }
     }
 }

@@ -20,7 +20,7 @@ namespace GitUI.CommandsDialogs.RepoHosting
         private readonly TranslationString _strError = new TranslationString("Error");
         private readonly TranslationString _strLoading = new TranslationString(" : LOADING : ");
         private readonly TranslationString _strUnableUnderstandPatch = new TranslationString("Error: Unable to understand patch");
-        private readonly TranslationString _strRemoteAlreadyExist = new TranslationString("ERROR: Remote with name {0} already exists but it does not point to the same repository!\r\nDetails: Is {1} expected {2}");
+        private readonly TranslationString _strRemoteAlreadyExist = new TranslationString("ERROR: Remote with name {0} already exists but it points to a different repository!\r\nDetails: Is {1} expected {2}");
         private readonly TranslationString _strCouldNotAddRemote = new TranslationString("Could not add remote with name {0} and URL {1}");
         #endregion
 
@@ -40,7 +40,7 @@ namespace GitUI.CommandsDialogs.RepoHosting
             Translate();
             loader.LoadingError += (sender, ex) =>
                 {
-                    MessageBox.Show(this, ex.Exception.Message, _strError.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(this, ex.Exception.ToString(), _strError.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
                     this.UnMask();
                 };
         }
@@ -148,7 +148,7 @@ namespace GitUI.CommandsDialogs.RepoHosting
                 _selectHostedRepoCB.SelectedItem = hostedRemote;
             }
         }
-        
+
         private void SelectNextHostedRepository()
         {
             if (_selectHostedRepoCB.Items.Count == 0)
@@ -308,7 +308,7 @@ namespace GitUI.CommandsDialogs.RepoHosting
         {
             if (_currentPullRequestInfo == null)
                 return;
-            
+
             UICommands.RepoChangedNotifier.Lock();
             try
             {
@@ -425,6 +425,24 @@ namespace GitUI.CommandsDialogs.RepoHosting
             {
                 MessageBox.Show(this, _strFailedToLoadDiscussionItem.Text + Environment.NewLine + ex.Message, _strError.Text);
             }
+        }
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                loader.Cancel();
+                loader.Dispose();
+
+                if (components != null)
+                    components.Dispose();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

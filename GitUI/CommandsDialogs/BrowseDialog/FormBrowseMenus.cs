@@ -16,9 +16,9 @@ namespace GitUI.CommandsDialogs
     /// This class is intended to have NO dependency to FormBrowse
     ///   (if needed this kind of code should be done in FormBrowseMenuCommands).
     /// </summary>
-    class FormBrowseMenus : ITranslate
+    class FormBrowseMenus : ITranslate, IDisposable
     {
-        MenuStrip _menuStrip;
+        ToolStrip _menuStrip;
 
         IList<MenuCommand> _navigateMenuCommands;
         IList<MenuCommand> _viewMenuCommands;
@@ -30,7 +30,7 @@ namespace GitUI.CommandsDialogs
         // location (RevisionGrid) can register items too!
         IList<ToolStripMenuItem> _itemsRegisteredWithMenuCommand = new List<ToolStripMenuItem>();
 
-        public FormBrowseMenus(MenuStrip menuStrip)
+        public FormBrowseMenus(ToolStrip menuStrip)
         {
             _menuStrip = menuStrip;
 
@@ -99,11 +99,11 @@ namespace GitUI.CommandsDialogs
         }
 
         /// <summary>
-        /// inserts 
+        /// inserts
         /// - Navigate (after Repository)
         /// - View (after Navigate)
         /// </summary>
-        public void InsertAdditionalMainMenuItems(ToolStripMenuItem insertAfterMenuItem)
+        public void InsertAdditionalMainMenuItems(ToolStripItem insertAfterMenuItem)
         {
             RemoveAdditionalMainMenuItems();
 
@@ -214,6 +214,21 @@ namespace GitUI.CommandsDialogs
             else
             {
                 throw new ApplicationException("this case is not allowed");
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _navigateToolStripMenuItem.Dispose();
+                _viewToolStripMenuItem.Dispose();
             }
         }
     }

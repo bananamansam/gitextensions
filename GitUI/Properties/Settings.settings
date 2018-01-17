@@ -2,9 +2,6 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="GitUI.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="WindowPositions" Type="GitUI.WindowPositionList" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
     <Setting Name="Hotkeys" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
@@ -18,6 +15,18 @@
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="Dashboard_CommonSplitContainer_SplitterDistance" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="Dashboard_DeviceDpi" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">96</Value>
+    </Setting>
+    <Setting Name="FormBrowse_DeviceDpi" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">96</Value>
+    </Setting>
+    <Setting Name="FormBrowse_MainSplitContainer_SplitterDistance" Type="System.Int32" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="FormBrowse_RevisionsSplitContainer_SplitterDistance" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
